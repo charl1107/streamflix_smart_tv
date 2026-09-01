@@ -1,0 +1,30 @@
+# Node / Wrangler
+node_modules/
+.wrangler/
+.env
+
+# Flutter / Dart
+.dart_tool/
+.packages
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Android
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/.gradle/
+local.properties
+GeneratedPluginRegistrant.java
+
+# IDE & OS
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.DS_Store
+Thumbs.db
