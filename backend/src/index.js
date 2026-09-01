@@ -72,6 +72,8 @@ app.use("/api/*", async (c, next) => {
   if (
     c.req.path === "/api/health" ||
     c.req.path === "/api/player" ||
+    c.req.path === "/api/streams" ||
+    c.req.path === "/api/subtitles" ||
     c.req.path.startsWith("/api/m3u8") ||
     c.req.path.startsWith("/api/stremio") ||
     c.req.path.startsWith("/api/extensions")

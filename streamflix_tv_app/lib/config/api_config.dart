@@ -9,6 +9,16 @@ class ApiConfig {
   static String tvEmbed(dynamic tmdbId, int season, int episode) => '$backendBaseUrl/player?type=tv&id=$tmdbId&s=$season&e=$episode';
   static String animeEmbed(dynamic id, int season, int episode) => '$backendBaseUrl/player?type=anime&id=$id&s=$season&e=$episode';
 
+  // JSON streams endpoint for native player
+  static String movieStreams(dynamic tmdbId) => '$backendBaseUrl/streams?type=movie&id=$tmdbId';
+  static String tvStreams(dynamic tmdbId, int season, int episode) => '$backendBaseUrl/streams?type=tv&id=$tmdbId&s=$season&e=$episode';
+  static String animeStreams(dynamic id, int season, int episode) => '$backendBaseUrl/streams?type=anime&id=$id&s=$season&e=$episode';
+
+  // Subtitle tracks endpoint
+  static String subtitles(String m3u8Url, {String referer = '', String origin = ''}) {
+    return '$backendBaseUrl/subtitles?url=${Uri.encodeComponent(m3u8Url)}&referer=${Uri.encodeComponent(referer)}&origin=${Uri.encodeComponent(origin)}';
+  }
+
   // Image helpers
   static String posterUrl(String? path, {String size = 'w500'}) {
     if (path == null || path.isEmpty) return '';

@@ -4,6 +4,108 @@ import { listExtensions, resolveAllStreams } from "../extensions/index.js";
 
 const app = new Hono();
 
+// ── 0. JSON Streams API (For native Flutter player) ──────────
+app.get("/streams", async (c) => {
+  const type = (c.req.query("type") || "movie").toLowerCase();
+  const id = c.req.query("id") || "";
+  const season = Number(c.req.query("s") || c.req.query("season") || 1);
+  const episode = Number(c.req.query("e") || c.req.query("episode") || 1);
+
+  if (!id) {
+    return c.json({ error: "Missing media ID" }, 400);
+  }
+
+  const { directStreams, backupEmbeds } = await resolveAllStreams(id, type, season, episode);
+  const currentWorkerBase = new URL(c.req.url).origin;
+
+  const streams = directStreams.map((s, idx) => {
+    const ref = s.headers?.Referer || s.headers?.referer || "";
+    const orig = s.headers?.Origin || s.headers?.origin || "";
+    return {
+      id: idx,
+      source: s.source || "Extension",
+      server: s.server || `Server ${idx + 1}`,
+      label: s.label || "HD",
+      url: `${currentWorkerBase}/api/m3u8?url=${encodeURIComponent(s.url)}&referer=${encodeURIComponent(ref)}&origin=${encodeURIComponent(orig)}`,
+    };
+  });
+
+  return c.json({ streams, backupEmbeds });
+});
+
+// ── 0b. Subtitle Tracks API (extract from M3U8 manifest) ──────
+app.get("/subtitles", async (c) => {
+  const m3u8Url = c.req.query("url");
+  const referer = c.req.query("referer") || "";
+  const origin = c.req.query("origin") || "";
+
+  if (!m3u8Url) {
+    return c.json({ error: "Missing url parameter" }, 400);
+  }
+
+  const reqHeaders = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+    "Accept": "*/*",
+  };
+  if (referer) reqHeaders["Referer"] = referer;
+  if (origin) reqHeaders["Origin"] = origin;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
+    const res = await fetch(m3u8Url, { headers: reqHeaders, signal: controller.signal });
+    clearTimeout(timeout);
+
+    if (!res.ok) {
+      return c.json({ subtitles: [], error: `Upstream ${res.status}` });
+    }
+
+    const text = await res.text();
+    const lines = text.split(/\r?\n/);
+    const currentWorkerBase = new URL(c.req.url).origin;
+    const subtitles = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line.startsWith("#EXT-X-MEDIA:")) continue;
+
+      // Parse attributes: TYPE=SUBTITLES,GROUP-ID="...",NAME="...",URI="...",... 
+      const typeMatch = line.match(/TYPE=([^,]+)/);
+      if (!typeMatch || typeMatch[1].trim() !== "SUBTITLES") continue;
+
+      const nameMatch = line.match(/NAME="([^"]+)"/);
+      const langMatch = line.match(/LANGUAGE="([^"]+)"/);
+      const uriMatch = line.match(/URI="([^"]+)"/);
+      const defaultMatch = line.match(/DEFAULT=(YES|NO)/);
+      const autoMatch = line.match(/AUTOSELECT=(YES|NO)/);
+
+      if (!uriMatch) continue;
+
+      // Resolve the subtitle URI relative to the manifest URL
+      let subUri = uriMatch[1];
+      try {
+        subUri = new URL(subUri, m3u8Url).toString();
+      } catch (_) {}
+
+      // Proxy the subtitle through our endpoint so it gets the right headers
+      const proxyUrl = `${currentWorkerBase}/api/m3u8?url=${encodeURIComponent(subUri)}&referer=${encodeURIComponent(referer)}&origin=${encodeURIComponent(origin)}`;
+
+      subtitles.push({
+        name: nameMatch ? nameMatch[1] : "Unknown",
+        language: langMatch ? langMatch[1] : "und",
+        url: proxyUrl,
+        isDefault: defaultMatch?.[1] === "YES",
+        isAutoselect: autoMatch?.[1] === "YES",
+      });
+    }
+
+    return c.json({ subtitles });
+  } catch (err) {
+    console.error("[subtitles error]", err.message);
+    return c.json({ subtitles: [], error: err.message });
+  }
+});
+
 // ── 1. Extensions API (For frontend settings / source info) ───
 app.get("/extensions", (c) => {
   return c.json({

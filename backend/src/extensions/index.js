@@ -2,8 +2,9 @@
 import * as zoryva from "./zoryva.js";
 import * as autoembed from "./autoembed.js";
 import * as multiembed from "./multiembed.js";
+import * as vidnest from "./vidnest.js";
 
-const extensions = [zoryva, autoembed, multiembed];
+const extensions = [zoryva, autoembed, multiembed, vidnest];
 
 export function listExtensions() {
   return extensions.map(e => e.metadata);
