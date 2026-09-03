@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:streamflix_tv/models/media_item.dart';
 import 'package:streamflix_tv/models/genre.dart';
 import 'package:streamflix_tv/models/season_episode.dart';
@@ -51,19 +51,19 @@ void main() {
       expect(episode.title, 'Pilot');
     });
 
-    test('Zoryva Embed URL generator', () {
-      final movieUrl = EmbedService.getMovieUrl(123);
-      expect(movieUrl, 'https://zoryva.me/embedded/movie/123');
+    test('Vidnest Embed URL generator', () {
+      final movieUrl = EmbedService.getMovieUrl(123, server: 'lamda');
+      expect(movieUrl, 'https://vidnest.fun/movie/123?server=lamda');
 
-      final tvUrl = EmbedService.getTvUrl(456, 2, 5);
-      expect(tvUrl, 'https://zoryva.me/embedded/tv/456/2/5');
+      final tvUrl = EmbedService.getTvUrl(456, 2, 5, server: 'gama');
+      expect(tvUrl, 'https://vidnest.fun/tv/456/2/5?server=gama');
     });
 
     test('AdBlocker blocks known ad domains', () {
       expect(AdBlocker.isAdUrl('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'), true);
       expect(AdBlocker.isAdUrl('https://popads.net/serve'), true);
       expect(AdBlocker.isAdUrl('https://doubleclick.net/ad'), true);
-      expect(AdBlocker.isAdUrl('https://zoryva.me/embedded/movie/123'), false);
+      expect(AdBlocker.isAdUrl('https://vidnest.fun/movie/123'), false);
     });
   });
 }

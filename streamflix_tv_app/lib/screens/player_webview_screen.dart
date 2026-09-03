@@ -149,17 +149,7 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
           if (!document.getElementById('tv-dpad-styles')) {
             var style = document.createElement('style');
             style.id = 'tv-dpad-styles';
-            style.textContent = \`
-              [tabindex="0"]:focus {
-                outline: 2px solid #3b82f6 !important;
-                outline-offset: 2px;
-                box-shadow: 0 0 12px rgba(59,130,246,0.6) !important;
-                border-radius: 4px;
-              }
-              [tabindex="0"]:focus-visible {
-                outline: 2px solid #3b82f6 !important;
-              }
-            \`;
+            style.textContent = '[tabindex="0"]:focus { outline: 2px solid #3b82f6 !important; outline-offset: 2px; box-shadow: 0 0 12px rgba(59,130,246,0.6) !important; border-radius: 4px; } [tabindex="0"]:focus-visible { outline: 2px solid #3b82f6 !important; }';
             (document.head || document.documentElement).appendChild(style);
           }
 
@@ -322,7 +312,6 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
         await _controller.runJavaScript("window._tvTogglePlay && window._tvTogglePlay();");
 
       // ── Menu / Context → open settings if available ──
-      case LogicalKeyboardKey.menu:
       case LogicalKeyboardKey.contextMenu:
         // Try to find and click a settings/gear button
         await _controller.runJavaScript('''

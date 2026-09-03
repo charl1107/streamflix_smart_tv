@@ -1,10 +1,22 @@
-// Player route — powered by modular Extension Manager
-import { Hono } from "hono";
-import { listExtensions, resolveAllStreams } from "../extensions/index.js";
+﻿import { Hono } from "hono";
+import { resolveAllStreams } from "../extensions/index.js";
 
 const app = new Hono();
 
-// ── 0. JSON Streams API (For native Flutter player) ──────────
+// Supported Vidnest streaming servers
+const VIDNEST_SERVERS = [
+  { id: "lamda", name: "Lamda", badge: "Fast", desc: "Primary High-Speed Mirror" },
+  { id: "primesrc", name: "PrimeSrc", badge: "1080p", desc: "Multi-Bitrate Stream" },
+  { id: "gama", name: "Gama", badge: "HD", desc: "Ultra-Low Latency" },
+  { id: "alfa", name: "Alfa", badge: "Stable", desc: "Global Edge Mirror" },
+  { id: "beta", name: "Beta", badge: "HD", desc: "High Compatibility" },
+  { id: "sigma", name: "Sigma", badge: "Mirror", desc: "Multi-Source Backup" },
+  { id: "catflix", name: "Catflix", badge: "Fast", desc: "Fast Stream Mirror" },
+  { id: "hexa", name: "Hexa", badge: "Backup", desc: "Alternative Server 1" },
+  { id: "delta", name: "Delta", badge: "Backup", desc: "Alternative Server 2" },
+];
+
+// ── 0. JSON Streams API ────────────────────────────────────────
 app.get("/streams", async (c) => {
   const type = (c.req.query("type") || "movie").toLowerCase();
   const id = c.req.query("id") || "";
@@ -69,7 +81,6 @@ app.get("/subtitles", async (c) => {
       const line = lines[i].trim();
       if (!line.startsWith("#EXT-X-MEDIA:")) continue;
 
-      // Parse attributes: TYPE=SUBTITLES,GROUP-ID="...",NAME="...",URI="...",... 
       const typeMatch = line.match(/TYPE=([^,]+)/);
       if (!typeMatch || typeMatch[1].trim() !== "SUBTITLES") continue;
 
@@ -81,13 +92,11 @@ app.get("/subtitles", async (c) => {
 
       if (!uriMatch) continue;
 
-      // Resolve the subtitle URI relative to the manifest URL
       let subUri = uriMatch[1];
       try {
         subUri = new URL(subUri, m3u8Url).toString();
       } catch (_) {}
 
-      // Proxy the subtitle through our endpoint so it gets the right headers
       const proxyUrl = `${currentWorkerBase}/api/m3u8?url=${encodeURIComponent(subUri)}&referer=${encodeURIComponent(referer)}&origin=${encodeURIComponent(origin)}`;
 
       subtitles.push({
@@ -106,55 +115,51 @@ app.get("/subtitles", async (c) => {
   }
 });
 
-// ── 1. Extensions API (For frontend settings / source info) ───
+// ── 1. Extensions API ──────────────────────────────────────────
 app.get("/extensions", (c) => {
   return c.json({
     status: "ok",
-    extensions: listExtensions(),
+    provider: "Vidnest Streaming Engine",
+    servers: VIDNEST_SERVERS,
   });
 });
 
-// ── 2. Player Route ───────────────────────────────────────────
+// ── 2. Vidnest Player Route ────────────────────────────────────
 app.get("/player", async (c) => {
   const type = (c.req.query("type") || "movie").toLowerCase();
   const id = c.req.query("id") || "";
   const season = Number(c.req.query("s") || c.req.query("season") || 1);
   const episode = Number(c.req.query("e") || c.req.query("episode") || 1);
+  const server = c.req.query("server") || "lamda";
+  const startAt = Number(c.req.query("startAt") || 0);
 
   if (!id) {
-    return c.html("<html><body style='background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;'><h2>Missing media ID</h2></body></html>", 400);
+    return c.html("<html><body style='background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>Missing media ID</h2></body></html>", 400);
   }
 
-  // 1. Resolve streams across all active extensions
-  const { directStreams, backupEmbeds } = await resolveAllStreams(id, type, season, episode);
+  let embedUrl = "";
+  if (type === "tv") {
+    embedUrl = `https://vidnest.fun/tv/${id}/${season}/${episode}?server=${encodeURIComponent(server)}`;
+  } else if (type === "anime") {
+    embedUrl = `https://vidnest.fun/anime/${id}/${episode}/sub?server=${encodeURIComponent(server)}`;
+  } else {
+    embedUrl = `https://vidnest.fun/movie/${id}?server=${encodeURIComponent(server)}`;
+  }
 
-  const currentWorkerBase = new URL(c.req.url).origin;
+  if (startAt > 0) {
+    embedUrl += `&startAt=${startAt}`;
+  }
 
-  // Build proxied m3u8 stream list with source labels
-  const proxiedStreams = directStreams.map((s, idx) => {
-    const rawUrl = s.url;
-    const ref = s.headers?.Referer || s.headers?.referer || "";
-    const orig = s.headers?.Origin || s.headers?.origin || "";
-    return {
-      id: idx,
-      source: s.source || "Extension",
-      server: s.server || ("Server " + (idx + 1)),
-      label: s.label || "HD",
-      url: `${currentWorkerBase}/api/m3u8?url=${encodeURIComponent(rawUrl)}&referer=${encodeURIComponent(ref)}&origin=${encodeURIComponent(orig)}`,
-    };
-  });
-
-  const streamsJson = JSON.stringify(proxiedStreams);
-  const backupEmbedsJson = JSON.stringify(backupEmbeds);
+  const serversJson = JSON.stringify(VIDNEST_SERVERS);
 
   const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>StreamFlix TV Player</title>
+  <title>Vidnest TV Player</title>
   <script>
-    // Strict Anti-Ad & Anti-Popup Shield
+    // Strict Anti-Popup & Anti-Redirect Shields
     (function() {
       const noop = function() { return null; };
       window.open = noop;
@@ -166,7 +171,6 @@ app.get("/player", async (c) => {
       } catch(e) {}
     })();
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body {
@@ -174,12 +178,9 @@ app.get("/player", async (c) => {
       height: 100vh;
       background: #000;
       overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-family: system-ui, -apple-system, sans-serif;
     }
-    #video-player {
+    #vidnest-iframe {
       position: absolute;
       top: 0;
       left: 0;
@@ -191,9 +192,15 @@ app.get("/player", async (c) => {
     }
     #loading {
       position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       gap: 16px;
       color: #fff;
       font-size: 16px;
@@ -210,191 +217,192 @@ app.get("/player", async (c) => {
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* NuvioTV Extension & Server Selector Overlay */
-    #server-btn {
+    /* Top TV Server Switcher HUD */
+    #server-badge-btn {
       position: absolute;
       top: 24px;
       right: 24px;
       z-index: 50;
-      background: rgba(20,20,30,0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(18, 20, 30, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
       color: #fff;
-      padding: 10px 18px;
+      padding: 10px 20px;
       border-radius: 24px;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 10px;
       transition: all 0.2s;
     }
-    #server-btn:hover, #server-btn:focus {
-      background: #3b82f6;
+    #server-badge-btn:focus, #server-badge-btn:hover {
+      background: #2563eb;
       border-color: #60a5fa;
-      transform: scale(1.05);
+      transform: scale(1.06);
       outline: none;
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
     }
+
+    /* Modal Drawer for TV Server Selection */
     #server-modal {
       position: absolute;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0,0,0,0.8);
-      backdrop-filter: blur(12px);
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(14px);
       z-index: 100;
       display: none;
       align-items: center;
       justify-content: center;
     }
     .modal-card {
-      background: #12131a;
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 16px;
-      width: 460px;
-      max-height: 80vh;
+      background: #111420;
+      border: 1.5px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      width: 640px;
+      max-height: 85vh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.9);
+      padding: 24px;
     }
     .modal-header {
-      padding: 18px 24px;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-      font-size: 18px;
-      font-weight: 700;
-      color: #fff;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      margin-bottom: 8px;
     }
-    .modal-close {
-      background: transparent;
-      border: 0;
-      color: #94a3b8;
+    .modal-title {
+      color: #fff;
       font-size: 20px;
-      cursor: pointer;
+      font-weight: 700;
     }
-    .server-list {
-      padding: 12px;
+    .modal-hint {
+      color: rgba(255,255,255,0.6);
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+    .server-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
       overflow-y: auto;
+    }
+    .server-card {
+      padding: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1.5px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: #e2e8f0;
+      cursor: pointer;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 4px;
+      transition: all 0.15s;
     }
-    .server-item {
-      padding: 14px 18px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid transparent;
-      color: #e2e8f0;
-      font-size: 15px;
+    .server-card:focus, .server-card:hover {
+      background: #2563eb;
+      border-color: #60a5fa;
+      outline: none;
+      transform: scale(1.04);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+    }
+    .server-card.active {
+      border-color: #10b981;
+      background: rgba(16, 185, 129, 0.2);
+    }
+    .server-card-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-    .server-item:hover, .server-item:focus {
-      background: #2563eb;
-      color: #fff;
-      border-color: #60a5fa;
-      outline: none;
-      transform: translateX(4px);
-    }
-    .server-item.active {
-      background: rgba(59,130,246,0.25);
-      border-color: #3b82f6;
-      color: #60a5fa;
       font-weight: 700;
+      font-size: 15px;
     }
-    .badges {
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .server-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(255,255,255,0.15);
     }
-    .badge {
+    .server-card-desc {
       font-size: 11px;
-      padding: 3px 7px;
-      border-radius: 5px;
-      background: rgba(255,255,255,0.1);
-    }
-    .badge-source {
-      background: rgba(59,130,246,0.2);
-      color: #93c5fd;
-    }
-
-    /* Hide ad and popup remnants */
-    .adsbygoogle, .banner-ad, .popunder, div[id*="ad-"], div[class*="ad-"], #player-ad-overlay {
-      display: none !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
+      color: rgba(255, 255, 255, 0.6);
     }
   </style>
 </head>
 <body>
   <div id="loading">
     <div class="spinner"></div>
-    <div id="loading-text">Loading Stream...</div>
+    <div id="loading-text">Connecting to Vidnest Stream...</div>
   </div>
 
-  <button id="server-btn" onclick="toggleServerModal()" tabindex="0">
-    <span>📺 Extensions & Sources</span>
+  <button id="server-badge-btn" onclick="toggleServerModal()" tabindex="0">
+    <span>📺 Switch Server (▲)</span>
   </button>
 
   <div id="server-modal" onclick="if(event.target===this) toggleServerModal()">
     <div class="modal-card">
       <div class="modal-header">
-        <span>Available Stream Extensions</span>
-        <button class="modal-close" onclick="toggleServerModal()">✕</button>
+        <span class="modal-title">Select Vidnest Streaming Server</span>
       </div>
-      <div class="server-list" id="server-list-container"></div>
+      <div class="modal-hint">Navigate with TV Remote D-Pad • Press OK to switch</div>
+      <div class="server-grid" id="server-grid"></div>
     </div>
   </div>
 
-  <video id="video-player" controls autoplay playsinline></video>
+  <!-- Sandboxed Vidnest Embed Iframe -->
+  <iframe
+    id="vidnest-iframe"
+    src="${embedUrl}"
+    allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+    allowfullscreen>
+  </iframe>
 
   <script>
-    const video = document.getElementById('video-player');
+    const iframe = document.getElementById('vidnest-iframe');
     const loading = document.getElementById('loading');
-    const streams = ${streamsJson};
-    const backupEmbeds = ${backupEmbedsJson};
-    let currentStreamIndex = 0;
-    let embedIndex = 0;
-    let hlsInstance = null;
+    const servers = ${serversJson};
+    let currentServer = "${server}";
+    let currentSeconds = ${startAt};
 
-    function hideLoading() {
-      if (loading) loading.style.display = 'none';
-    }
+    iframe.onload = function() {
+      if (loading) loading.style.opacity = '0';
+      setTimeout(() => { if (loading) loading.style.display = 'none'; }, 300);
+    };
 
-    function showLoading(text) {
-      if (loading) {
-        loading.style.display = 'flex';
-        const txt = document.getElementById('loading-text');
-        if (txt && text) txt.innerText = text;
+    // Listen to video progress events from iframe if dispatched
+    window.addEventListener('message', function(e) {
+      if (e.data && typeof e.data.currentTime === 'number') {
+        currentSeconds = Math.floor(e.data.currentTime);
       }
-    }
+    });
 
-    function renderServerList() {
-      const container = document.getElementById('server-list-container');
+    function renderServers() {
+      const container = document.getElementById('server-grid');
       if (!container) return;
       container.innerHTML = '';
 
-      streams.forEach((item, idx) => {
+      servers.forEach((s, idx) => {
         const div = document.createElement('div');
-        div.className = 'server-item' + (idx === currentStreamIndex ? ' active' : '');
+        div.className = 'server-card' + (s.id.toLowerCase() === currentServer.toLowerCase() ? ' active' : '');
         div.tabIndex = 0;
-        div.innerHTML = '<span>' + item.server + '</span><div class="badges"><span class="badge badge-source">' + (item.source || 'Extension') + '</span><span class="badge">' + (item.label || 'HD') + '</span></div>';
-        div.onclick = function() {
-          selectStream(idx);
-          toggleServerModal();
-        };
-        div.onkeydown = function(e) {
+        div.innerHTML = `
+          <div class="server-card-top">
+            <span>\${s.name}</span>
+            <span class="server-badge">\${s.badge}</span>
+          </div>
+          <div class="server-card-desc">\${s.desc}</div>
+        `;
+        div.onclick = () => switchServer(s.id);
+        div.onkeydown = (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
-            selectStream(idx);
-            toggleServerModal();
+            switchServer(s.id);
           }
         };
         container.appendChild(div);
@@ -407,133 +415,58 @@ app.get("/player", async (c) => {
       const isOpen = modal.style.display === 'flex';
       modal.style.display = isOpen ? 'none' : 'flex';
       if (!isOpen) {
-        renderServerList();
-        const activeItem = modal.querySelector('.server-item.active') || modal.querySelector('.server-item');
-        if (activeItem) activeItem.focus();
+        renderServers();
+        const activeCard = modal.querySelector('.server-card.active') || modal.querySelector('.server-card');
+        if (activeCard) activeCard.focus();
+      }
+    }
+
+    function switchServer(serverId) {
+      currentServer = serverId;
+      toggleServerModal();
+      if (loading) {
+        loading.style.display = 'flex';
+        loading.style.opacity = '1';
+        document.getElementById('loading-text').innerText = 'Switching to ' + serverId + '...';
+      }
+
+      const mediaType = "${type}";
+      const mediaId = "${id}";
+      let nextUrl = "";
+      if (mediaType === "tv") {
+        nextUrl = "https://vidnest.fun/tv/" + mediaId + "/${season}/${episode}?server=" + serverId;
+      } else if (mediaType === "anime") {
+        nextUrl = "https://vidnest.fun/anime/" + mediaId + "/${episode}/sub?server=" + serverId;
       } else {
-        video.focus();
+        nextUrl = "https://vidnest.fun/movie/" + mediaId + "?server=" + serverId;
       }
+
+      if (currentSeconds > 0) {
+        nextUrl += "&startAt=" + currentSeconds;
+      }
+
+      iframe.src = nextUrl;
     }
 
-    function selectStream(index) {
-      if (index >= 0 && index < streams.length) {
-        currentStreamIndex = index;
-        const item = streams[currentStreamIndex];
-        showLoading('Connecting [' + item.source + '] ' + item.server + ' (' + item.label + ')...');
-        playHls(item.url);
-      }
-    }
-
-    function tryNextStream() {
-      if (currentStreamIndex + 1 < streams.length) {
-        currentStreamIndex++;
-        selectStream(currentStreamIndex);
-      } else {
-        tryNextBackupEmbed();
-      }
-    }
-
-    function playHls(m3u8Url) {
-      if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-      }
-
-      if (Hls.isSupported()) {
-        hlsInstance = new Hls({
-          enableWorker: true,
-          lowLatencyMode: true,
-          backBufferLength: 90,
-          maxBufferSize: 60 * 1024 * 1024,
-          maxBufferLength: 30
-        });
-        hlsInstance.loadSource(m3u8Url);
-        hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
-          hideLoading();
-          video.play().catch(function(e) {});
-        });
-        hlsInstance.on(Hls.Events.ERROR, function(event, data) {
-          if (data.fatal) {
-            console.warn('HLS stream fatal error, trying next stream:', data.details);
-            tryNextStream();
-          }
-        });
-      } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = m3u8Url;
-        video.onloadedmetadata = function() {
-          hideLoading();
-          video.play().catch(function() {});
-        };
-        video.onerror = function() {
-          tryNextStream();
-        };
-      } else {
-        tryNextBackupEmbed();
-      }
-    }
-
-    function tryNextBackupEmbed() {
-      if (embedIndex < backupEmbeds.length) {
-        const embedUrl = backupEmbeds[embedIndex];
-        embedIndex++;
-        showLoading('Loading Backup Stream ' + embedIndex + '...');
-        if (video) video.remove();
-        const serverBtn = document.getElementById('server-btn');
-        if (serverBtn) serverBtn.style.display = 'none';
-
-        const oldIframe = document.querySelector('iframe');
-        if (oldIframe) oldIframe.remove();
-
-        const iframe = document.createElement('iframe');
-        iframe.src = embedUrl;
-        iframe.style = 'position:absolute;top:0;left:0;width:100%;height:100%;border:0;background:#000;';
-        iframe.allow = 'autoplay; fullscreen; picture-in-picture; encrypted-media';
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-presentation');
-        iframe.allowFullscreen = true;
-        iframe.onload = hideLoading;
-        iframe.onerror = function() { tryNextBackupEmbed(); };
-        document.body.appendChild(iframe);
-      } else {
-        showLoading('All streaming servers offline. Please try another title.');
-      }
-    }
-
-    // TV Remote D-Pad controls (Left/Right seek, Up/Down volume/sources, Space/Enter play)
+    // Remote D-Pad Navigation Listener
     window.addEventListener('keydown', function(e) {
       const modal = document.getElementById('server-modal');
       const isModalOpen = modal && modal.style.display === 'flex';
 
-      if (e.key === 's' || e.key === 'S' || e.key === 'Menu' || e.key === 'ContextMenu') {
-        toggleServerModal();
-        e.preventDefault();
-        return;
-      }
-
-      if (isModalOpen) {
-        if (e.key === 'Escape' || e.key === 'Back' || e.key === 'Backspace') {
+      if (e.key === 'ArrowUp' || e.key === 'Menu' || e.key === 's' || e.key === 'S') {
+        if (!isModalOpen) {
           toggleServerModal();
           e.preventDefault();
         }
-        return;
-      }
-
-      if (!video) return;
-      if (e.key === 'ArrowRight') { video.currentTime += 10; }
-      else if (e.key === 'ArrowLeft') { video.currentTime -= 10; }
-      else if (e.key === 'ArrowUp') { video.volume = Math.min(1, video.volume + 0.1); }
-      else if (e.key === 'ArrowDown') { video.volume = Math.max(0, video.volume - 0.1); }
-      else if (e.key === ' ' || e.key === 'Enter') {
-        if (video.paused) video.play(); else video.pause();
+      } else if (e.key === 'Escape' || e.key === 'Back' || e.key === 'Backspace') {
+        if (isModalOpen) {
+          toggleServerModal();
+          e.preventDefault();
+        }
       }
     });
 
-    if (streams.length > 0) {
-      selectStream(0);
-      renderServerList();
-    } else {
-      tryNextBackupEmbed();
-    }
+    renderServers();
   </script>
 </body>
 </html>`;
