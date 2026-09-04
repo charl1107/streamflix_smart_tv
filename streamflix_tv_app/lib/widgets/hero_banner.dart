@@ -58,7 +58,88 @@ class _HeroBannerState extends State<HeroBanner> {
   @override
   Widget build(BuildContext context) {
     if (widget.items.isEmpty) {
-      return const SizedBox(height: 300);
+      return SizedBox(
+        width: double.infinity,
+        child: AspectRatio(
+          aspectRatio: 16 / 9,
+          child: Container(
+            decoration: const BoxDecoration(
+              color: Color(0xFF141417),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF141417),
+                  Color(0xFF1E1E24),
+                  Color(0xFF09090B),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 48,
+                  bottom: 56,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 140,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Container(
+                        width: 380,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        width: 480,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Row(
+                        children: [
+                          Container(
+                            width: 130,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE50914).withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Container(
+                            width: 120,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     return SizedBox(

@@ -1,0 +1,31 @@
+﻿<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180">
+    <!-- Background -->
+    <path
+        android:fillColor="#09090B"
+        android:pathData="M0,0h320v180h-320z" />
+    
+    <!-- Outer Glow Circle -->
+    <path
+        android:fillColor="#33E50914"
+        android:pathData="M160,90m-48,0a48,48 0,1 1,96 0a48,48 0,1 1,-96 0" />
+    
+    <!-- Red Ring -->
+    <path
+        android:strokeColor="#E50914"
+        android:strokeWidth="4"
+        android:pathData="M160,90m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0" />
+    
+    <!-- Inner Fill Circle -->
+    <path
+        android:fillColor="#26E50914"
+        android:pathData="M160,90m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
+    
+    <!-- Play Arrow -->
+    <path
+        android:fillColor="#E50914"
+        android:pathData="M152,76 L174,90 L152,104 Z" />
+</vector>
