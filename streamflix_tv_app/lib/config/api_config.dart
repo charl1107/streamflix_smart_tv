@@ -9,10 +9,16 @@ class ApiConfig {
   static const String anilistClientSecret = String.fromEnvironment('ANILIST_CLIENT_SECRET', defaultValue: '');
   static const String anilistRedirectUrl = String.fromEnvironment('ANILIST_REDIRECT_URL', defaultValue: 'https://cineko-frontend.vercel.app');
 
-  // Embed URLs routed through backend player proxy
+  // Embed URLs routed through backend player proxy or multi-source embed
   static String movieEmbed(dynamic tmdbId) => '$backendBaseUrl/player?type=movie&id=$tmdbId';
   static String tvEmbed(dynamic tmdbId, int season, int episode) => '$backendBaseUrl/player?type=tv&id=$tmdbId&s=$season&e=$episode';
   static String animeEmbed(dynamic id, int season, int episode) => '$backendBaseUrl/player?type=anime&id=$id&s=$season&e=$episode';
+
+  // Multi-provider Embed API endpoint
+  static String embedSources() => '$backendBaseUrl/embed/sources';
+  static String embedEndpoint(String type, dynamic id, {int season = 1, int episode = 1, String provider = 'vidnest', String server = 'lamda'}) {
+    return '$backendBaseUrl/embed/$type/$id?season=$season&episode=$episode&provider=$provider&server=$server';
+  }
 
   // JSON streams endpoint for native player
   static String movieStreams(dynamic tmdbId) => '$backendBaseUrl/streams?type=movie&id=$tmdbId';

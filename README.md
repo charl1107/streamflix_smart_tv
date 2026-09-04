@@ -9,7 +9,7 @@ A modern, ad-free Smart TV streaming application built with **Flutter (Android T
 - **TV-First User Interface**: Optimized for 10-foot viewing with D-Pad spatial navigation and focus management.
 - **Ad-Free M3U8 Streaming**: Cloudflare Edge proxy parses and rewrites HLS playlists to stream pure MPEG-TS video chunks without ad popups or redirects.
 - **Multi-Source Extension Architecture**: Pluggable streaming providers (`Zoryva`, `AutoEmbed`, `MultiEmbed`) with automated failover.
-- **Stremio Addon Protocol Compliant**: Compatible with standard Stremio ecosystem endpoints (`/api/stremio/manifest.json`, `/api/stremio/stream/...`).
+- **Multi-Source Embed Engine**: Unified embed system compatible with Vidnest, Zoryva, VidSrc, AutoEmbed, and 2Embed.
 - **Comprehensive Catalog**: Full support for Movies, TV Series, and Anime with episode selectors, search, and genre discovery via TMDB.
 - **TV Remote Controls**: Direct key mapping for D-Pad Seek (Left/Right 10s), Volume (Up/Down), Play/Pause (Center/OK), and Back button navigation.
 
@@ -18,7 +18,7 @@ A modern, ad-free Smart TV streaming application built with **Flutter (Android T
 ## 🏗️ Architecture
 
 ```
-[Android TV App (Flutter)]
+[Android TV & Web Client (Cineko Flutter)]
         │
         ▼ (Authenticated API calls)
 [Cloudflare Worker Backend (Hono)]
@@ -27,7 +27,7 @@ A modern, ad-free Smart TV streaming application built with **Flutter (Android T
    ├── /api/extensions ──────────────────────────────────► Pluggable Stream Extractors
    ├── /api/player ───────────────────────────────────────► Multi-Server Stream Resolver
    ├── /api/m3u8 ────────────────────────────────────────► Manifest Rewriter & Chunk Proxy
-   └── /api/stremio/* ───────────────────────────────────► Stremio Addon Protocol
+   └── /api/embed/* ─────────────────────────────────────► Multi-Provider Embed Resolvers (Vidnest, Zoryva, VidSrc, etc.)
 ```
 
 ---

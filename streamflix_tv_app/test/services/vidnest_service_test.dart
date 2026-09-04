@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:streamflix_tv/services/vidnest_service.dart';
 import 'package:streamflix_tv/services/embed_service.dart';
 
@@ -63,6 +63,48 @@ void main() {
 
       final tv = EmbedService.getTvUrl(1399, 1, 1, server: 'primesrc');
       expect(tv, 'https://vidnest.fun/tv/1399/1/1?server=primesrc');
+    });
+
+    test('EmbedService routes to alternative embed providers', () {
+      expect(
+        EmbedService.getMovieUrl(550, provider: 'zoryva'),
+        'https://zoryva.me/embedded/movie/550',
+      );
+      expect(
+        EmbedService.getMovieUrl(550, provider: 'vidsrc'),
+        'https://vidsrc.mov/embed/movie/550',
+      );
+      expect(
+        EmbedService.getMovieUrl(550, provider: 'autoembed'),
+        'https://player.autoembed.cc/embed/movie/550',
+      );
+      expect(
+        EmbedService.getMovieUrl(550, provider: '2embed'),
+        'https://www.2embed.cc/embed/550',
+      );
+
+      expect(
+        EmbedService.getTvUrl(1399, 2, 4, provider: 'zoryva'),
+        'https://zoryva.me/embedded/tv/1399/2/4',
+      );
+      expect(
+        EmbedService.getTvUrl(1399, 2, 4, provider: 'vidsrc'),
+        'https://vidsrc.mov/embed/tv/1399/2/4',
+      );
+      expect(
+        EmbedService.getTvUrl(1399, 2, 4, provider: 'autoembed'),
+        'https://player.autoembed.cc/embed/tv/1399/2/4',
+      );
+      expect(
+        EmbedService.getTvUrl(1399, 2, 4, provider: '2embed'),
+        'https://www.2embed.cc/embedtv/1399&s=2&e=4',
+      );
+    });
+
+    test('EmbedService provides 5 configured embed providers', () {
+      expect(EmbedService.providers.length, 5);
+      final providerIds = EmbedService.providers.map((p) => p.id).toList();
+      expect(providerIds, containsAll(['vidnest', 'zoryva', 'vidsrc', 'autoembed', '2embed']));
     });
   });
 }

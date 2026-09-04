@@ -6,7 +6,7 @@ import tmdbRoutes from "./routes/tmdb.js";
 import animeRoutes from "./routes/anime.js";
 import playerRoutes from "./routes/player.js";
 import m3u8Routes from "./routes/m3u8.js";
-import stremioRoutes from "./routes/stremio.js";
+import embedRoutes from "./routes/embed.js";
 
 const app = new Hono();
 
@@ -75,7 +75,7 @@ app.use("/api/*", async (c, next) => {
     c.req.path === "/api/streams" ||
     c.req.path === "/api/subtitles" ||
     c.req.path.startsWith("/api/m3u8") ||
-    c.req.path.startsWith("/api/stremio") ||
+    c.req.path.startsWith("/api/embed") ||
     c.req.path.startsWith("/api/extensions")
   ) {
     return next();
@@ -100,7 +100,7 @@ app.route("/api", tmdbRoutes);
 app.route("/api/anime", animeRoutes);
 app.route("/api", playerRoutes);
 app.route("/api", m3u8Routes);
-app.route("/api", stremioRoutes);
+app.route("/api/embed", embedRoutes);
 
 // ── 404 ────────────────────────────────────────────────
 app.notFound((c) => {

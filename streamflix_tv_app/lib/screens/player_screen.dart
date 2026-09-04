@@ -5,6 +5,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import '../services/ad_blocker.dart';
 import '../services/vidnest_service.dart';
+import '../services/embed_service.dart';
 import '../widgets/tv_focus_wrapper.dart';
 import '../widgets/tv_server_switcher_modal.dart';
 
@@ -26,6 +27,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   int _season = 1;
   int _episode = 1;
 
+  String _activeProviderId = 'vidnest';
   String _activeServerId = 'lamda';
   int _lastPlaybackSeconds = 0;
 
@@ -75,26 +77,33 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.dispose();
   }
 
-  String _buildTargetUrl({required String serverId, int startAt = 0}) {
+  String _buildTargetUrl({String? providerId, String? serverId, int startAt = 0}) {
+    final effectiveProvider = providerId ?? _activeProviderId;
+    final effectiveServer = serverId ?? _activeServerId;
+
     if (_mediaType == 'tv') {
-      return VidnestService.buildTvUrl(
-        tmdbId: _mediaId,
-        season: _season,
-        episode: _episode,
-        server: serverId,
+      return EmbedService.getTvUrl(
+        _mediaId,
+        _season,
+        _episode,
+        provider: effectiveProvider,
+        server: effectiveServer,
         startAt: startAt,
       );
     } else if (_mediaType == 'anime') {
-      return VidnestService.buildAnimeUrl(
-        anilistId: _mediaId,
-        episode: _episode,
-        server: serverId,
+      return EmbedService.getAnimeUrl(
+        _mediaId,
+        _season,
+        _episode,
+        provider: effectiveProvider,
+        server: effectiveServer,
         startAt: startAt,
       );
     } else {
-      return VidnestService.buildMovieUrl(
-        tmdbId: _mediaId ?? '324857',
-        server: serverId,
+      return EmbedService.getMovieUrl(
+        _mediaId ?? '324857',
+        provider: effectiveProvider,
+        server: effectiveServer,
         startAt: startAt,
       );
     }
@@ -323,12 +332,46 @@ class _PlayerScreenState extends State<PlayerScreen> {
     return h > 0 ? '$h:$m:$s' : '$m:$s';
   }
 
+  Future<void> _onSwitchProvider(EmbedProvider provider) async {
+    final currentPos = await _fetchCurrentPlaybackSeconds();
+    _lastPlaybackSeconds = currentPos > 0 ? currentPos : _lastPlaybackSeconds;
+    _activeProviderId = provider.id;
+
+    final newUrl = _buildTargetUrl(
+      providerId: _activeProviderId,
+      serverId: _activeServerId,
+      startAt: _lastPlaybackSeconds,
+    );
+
+    setState(() {
+      _showServerModal = false;
+      _isLoading = true;
+      _embedUrl = newUrl;
+    });
+
+    _showHudBadge('Switched to ${provider.name}', Icons.cloud_sync);
+
+    await _controller.loadRequest(
+      Uri.parse(_embedUrl),
+      headers: {'Referer': 'https://vidnest.fun/'},
+    );
+
+    if (mounted) {
+      _tvInputFocusNode.requestFocus();
+    }
+  }
+
   Future<void> _onSwitchServer(VidnestServer server) async {
     final currentPos = await _fetchCurrentPlaybackSeconds();
     _lastPlaybackSeconds = currentPos > 0 ? currentPos : _lastPlaybackSeconds;
+    _activeProviderId = 'vidnest';
     _activeServerId = server.id;
 
-    final newUrl = _buildTargetUrl(serverId: _activeServerId, startAt: _lastPlaybackSeconds);
+    final newUrl = _buildTargetUrl(
+      providerId: 'vidnest',
+      serverId: _activeServerId,
+      startAt: _lastPlaybackSeconds,
+    );
 
     setState(() {
       _showServerModal = false;
@@ -491,19 +534,27 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     // Server Quick Switch Button
                     TvFocusWrapper(
                       onTap: () => setState(() => _showServerModal = true),
+                      borderRadius: BorderRadius.circular(16),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent.withValues(alpha: 0.8),
+                          color: const Color(0xFFE50914).withValues(alpha: 0.85),
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: Colors.white24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFFE50914).withValues(alpha: 0.4),
+                              blurRadius: 10,
+                              spreadRadius: 1,
+                            ),
+                          ],
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.dns, color: Colors.white, size: 18),
+                            const Icon(Icons.cloud_sync, color: Colors.white, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              'Server: ${VidnestService.findServer(_activeServerId).name} (▲)',
+                              'Source: ${EmbedService.findProvider(_activeProviderId).name}${_activeProviderId == "vidnest" ? " • ${VidnestService.findServer(_activeServerId).name}" : ""} (▲)',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
@@ -542,7 +593,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (_hudBadgeIcon != null) ...[
-                            Icon(_hudBadgeIcon, color: Colors.blueAccent, size: 32),
+                            Icon(_hudBadgeIcon, color: const Color(0xFFE50914), size: 32),
                             const SizedBox(width: 14),
                           ],
                           Text(
@@ -563,7 +614,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
               if (_showServerModal)
                 TvServerSwitcherModal(
                   activeServerId: _activeServerId,
+                  activeProviderId: _activeProviderId,
                   onServerSelected: _onSwitchServer,
+                  onProviderSelected: _onSwitchProvider,
                   onDismiss: () {
                     setState(() => _showServerModal = false);
                     _tvInputFocusNode.requestFocus();
