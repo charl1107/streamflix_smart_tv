@@ -182,24 +182,54 @@ class _DetailScreenState extends State<DetailScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 10),
+                                  // Frosted Meta Chips matching streamflix-cf MediaDrawer
                                   Row(
                                     children: [
                                       if (item.rating > 0) ...[
-                                        const Icon(Icons.star, color: Colors.yellow, size: 20),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          item.rating.toStringAsFixed(1),
-                                          style: const TextStyle(fontSize: 16, color: Colors.white),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(alpha: 0.5),
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                item.rating.toStringAsFixed(1),
+                                                style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
                                         ),
-                                        const SizedBox(width: 16),
+                                        const SizedBox(width: 10),
                                       ],
                                       if (year.isNotEmpty) ...[
-                                        Text(year, style: const TextStyle(fontSize: 16, color: Colors.white70)),
-                                        const SizedBox(width: 16),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(alpha: 0.5),
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                          ),
+                                          child: Text(year, style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w600)),
+                                        ),
+                                        const SizedBox(width: 10),
                                       ],
                                       if (item.runtime != null)
-                                        Text('${item.runtime} min', style: const TextStyle(fontSize: 16, color: Colors.white70)),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: Colors.black.withValues(alpha: 0.5),
+                                            borderRadius: BorderRadius.circular(20),
+                                            border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                          ),
+                                          child: Text('${item.runtime} min', style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w600)),
+                                        ),
                                     ],
                                   ),
                                   const SizedBox(height: 16),
@@ -207,29 +237,37 @@ class _DetailScreenState extends State<DetailScreen> {
                                     item.overview ?? '',
                                     maxLines: 4,
                                     overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 16),
+                                    style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.4),
                                   ),
                                   const SizedBox(height: 24),
                                   if (item.mediaType == 'movie')
                                     TvFocusWrapper(
                                       onTap: _onPlayPressed,
                                       autofocus: true,
+                                      borderRadius: BorderRadius.circular(30),
                                       child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
                                         decoration: BoxDecoration(
-                                          color: Colors.blue,
-                                          borderRadius: BorderRadius.circular(8),
+                                          color: const Color(0xFFE50914),
+                                          borderRadius: BorderRadius.circular(30),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: const Color(0xFFE50914).withValues(alpha: 0.5),
+                                              blurRadius: 18,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
                                         ),
                                         child: const Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
-                                            Icon(Icons.play_arrow, color: Colors.white),
+                                            Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
                                             SizedBox(width: 8),
                                             Text(
                                               'Play Movie',
                                               style: TextStyle(
                                                 color: Colors.white,
-                                                fontSize: 18,
+                                                fontSize: 17,
                                                 fontWeight: FontWeight.bold,
                                               ),
                                             ),

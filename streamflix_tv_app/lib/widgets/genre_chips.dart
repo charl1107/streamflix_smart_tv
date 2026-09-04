@@ -30,23 +30,39 @@ class GenreChips extends StatelessWidget {
           final isSelected = selectedGenre?.id == genre?.id;
 
           return Padding(
-            padding: const EdgeInsets.only(right: 12.0),
+            padding: const EdgeInsets.only(right: 10.0),
             child: TvFocusWrapper(
               onTap: () => onSelected(genre),
-              child: ChoiceChip(
-                label: Text(
-                  isAll ? 'All' : genre!.name,
-                  style: TextStyle(
-                    color: isSelected ? Colors.white : Colors.white70,
-                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              borderRadius: BorderRadius.circular(24),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isSelected ? const Color(0xFFE50914) : const Color(0xFF141417),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: isSelected ? const Color(0xFFE50914) : const Color(0x2EFFFFFF),
+                    width: 1,
+                  ),
+                  boxShadow: isSelected
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFFE50914).withValues(alpha: 0.4),
+                            blurRadius: 10,
+                          ),
+                        ]
+                      : [],
+                ),
+                child: Center(
+                  child: Text(
+                    isAll ? 'All' : genre!.name,
+                    style: TextStyle(
+                      color: isSelected ? Colors.white : Colors.white70,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontSize: 13.5,
+                    ),
                   ),
                 ),
-                selected: isSelected,
-                selectedColor: Colors.blue,
-                backgroundColor: const Color(0xFF1E1E1E), // Dark surface
-                onSelected: (_) => onSelected(genre),
-                // Disable default ChoiceChip focus to let TvFocusWrapper handle it
-                focusNode: FocusNode(canRequestFocus: false),
               ),
             ),
           );

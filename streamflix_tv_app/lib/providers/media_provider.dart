@@ -19,9 +19,13 @@ class MediaProvider extends ChangeNotifier {
   List<MediaItem> genreFilteredMovies = [];
   List<MediaItem> genreFilteredShows = [];
 
+  List<MediaItem> trendingAnime = [];
+  List<MediaItem> popularAnime = [];
+
   bool isHomeLoading = true;
   bool isMoviesLoading = true;
   bool isShowsLoading = true;
+  bool isAnimeLoading = true;
   bool isFiltering = false;
 
   // Compatibility aliases
@@ -29,7 +33,26 @@ class MediaProvider extends ChangeNotifier {
   List<MediaItem> get popularShows => popularTv;
   List<MediaItem> get topRatedShows => topRatedTv;
   List<Genre> get showGenres => tvGenres;
-  bool get isLoading => isHomeLoading || isMoviesLoading || isShowsLoading;
+  bool get isLoading => isHomeLoading || isMoviesLoading || isShowsLoading || isAnimeLoading;
+
+  Future<void> loadAnime() async {
+    isAnimeLoading = true;
+    notifyListeners();
+
+    try {
+      final futures = await Future.wait([
+        _tmdbService.getAnimeTrending(),
+        _tmdbService.getAnimePopular(),
+      ]);
+      trendingAnime = futures[0];
+      popularAnime = futures[1];
+    } catch (e) {
+      debugPrint('[MediaProvider] Error loading anime: $e');
+    } finally {
+      isAnimeLoading = false;
+      notifyListeners();
+    }
+  }
 
   Future<void> loadHome() async {
     isHomeLoading = true;

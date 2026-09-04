@@ -2,6 +2,10 @@
 node_modules/
 .wrangler/
 .env
+.env.*
+.dev.vars
+*.env
+credentials.json
 
 # Flutter / Dart
 .dart_tool/

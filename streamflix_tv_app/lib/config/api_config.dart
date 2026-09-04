@@ -4,6 +4,11 @@ class ApiConfig {
   static const String appSecret = 'streamflix_tv_sec_7f9a2e8c1b';
   static const String tmdbImageBase = 'https://image.tmdb.org/t/p';
 
+  // AniList OAuth / API Credentials (Passed securely via --dart-define or .env, never exposed on push)
+  static const String anilistClientId = String.fromEnvironment('ANILIST_CLIENT_ID', defaultValue: '50147');
+  static const String anilistClientSecret = String.fromEnvironment('ANILIST_CLIENT_SECRET', defaultValue: '');
+  static const String anilistRedirectUrl = String.fromEnvironment('ANILIST_REDIRECT_URL', defaultValue: 'https://cineko-frontend.vercel.app');
+
   // Embed URLs routed through backend player proxy
   static String movieEmbed(dynamic tmdbId) => '$backendBaseUrl/player?type=movie&id=$tmdbId';
   static String tvEmbed(dynamic tmdbId, int season, int episode) => '$backendBaseUrl/player?type=tv&id=$tmdbId&s=$season&e=$episode';

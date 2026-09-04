@@ -78,85 +78,206 @@ class _HeroBannerState extends State<HeroBanner> {
               itemBuilder: (context, index) {
                 final item = widget.items[index];
                 final title = item.title.isNotEmpty ? item.title : 'Unknown';
+                final year = item.year?.toString() ?? '';
                 
                 return Stack(
                   fit: StackFit.expand,
                   children: [
-                    // Backdrop Image
+                    // 1. Backdrop Image
                     CachedNetworkImage(
                       imageUrl: ApiConfig.backdropUrl(item.backdropPath ?? item.posterPath ?? ''),
                       fit: BoxFit.cover,
-                      errorWidget: (context, url, error) => Container(color: Colors.grey[900]),
+                      alignment: Alignment.center,
+                      errorWidget: (context, url, error) => Container(color: const Color(0xFF09090B)),
                     ),
-                    // Gradient Overlay
+
+                    // 2. Streamflix-CF 3-Point Vignette Gradient
                     Container(
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [Colors.transparent, Colors.black87, Colors.black],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          stops: [0.3, 0.8, 1.0],
+                          colors: [
+                            Colors.black.withValues(alpha: 0.94),
+                            Colors.black.withValues(alpha: 0.55),
+                            Colors.black.withValues(alpha: 0.88),
+                          ],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          stops: const [0.0, 0.45, 1.0],
                         ),
                       ),
                     ),
-                    // Content
+                    Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.transparent,
+                            const Color(0xFF09090B).withValues(alpha: 0.8),
+                            const Color(0xFF09090B),
+                          ],
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          stops: const [0.5, 0.85, 1.0],
+                        ),
+                      ),
+                    ),
+
+                    // 3. Left-Aligned Content block
                     Positioned(
-                      left: 48,
-                      bottom: 48,
-                      right: 48,
+                      left: 56,
+                      bottom: 56,
+                      right: 240,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          // Title
                           Text(
                             title,
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 38,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 8),
-                          if (item.rating > 0)
-                            Row(
-                              children: [
-                                const Icon(Icons.star, color: Colors.yellow, size: 20),
-                                const SizedBox(width: 4),
-                                Text(
-                                  item.rating.toStringAsFixed(1),
-                                  style: const TextStyle(color: Colors.white, fontSize: 16),
+                          const SizedBox(height: 12),
+
+                          // Frosted Metadata Pills (Star rating, release year, HD tag)
+                          Row(
+                            children: [
+                              if (item.rating > 0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        item.rating.toStringAsFixed(1),
+                                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              if (year.isNotEmpty) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                  ),
+                                  child: Text(
+                                    year,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w600),
+                                  ),
                                 ),
                               ],
-                            ),
-                          const SizedBox(height: 8),
-                          Text(
-                            item.overview ?? '',
-                            style: const TextStyle(
-                              color: Colors.white70,
-                              fontSize: 16,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 16),
-                          TvFocusWrapper(
-                            onTap: () => widget.onItemTap(item),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                              decoration: BoxDecoration(
-                                color: Colors.blue,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Text(
-                                'Watch Now',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE50914).withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFFE50914), width: 0.8),
+                                ),
+                                child: const Text(
+                                  'HD',
+                                  style: TextStyle(color: Color(0xFFE50914), fontSize: 11, fontWeight: FontWeight.w900),
                                 ),
                               ),
+                            ],
+                          ),
+                          const SizedBox(height: 14),
+
+                          // Overview synopsis
+                          if (item.overview != null && item.overview!.isNotEmpty)
+                            Text(
+                              item.overview!,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 15,
+                                height: 1.4,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
                             ),
+                          const SizedBox(height: 22),
+
+                          // Dual Action Pills ("Play" in Crimson Red, "Details" in Frosted Outline)
+                          Row(
+                            children: [
+                              TvFocusWrapper(
+                                onTap: () => widget.onItemTap(item),
+                                borderRadius: BorderRadius.circular(30),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE50914),
+                                    borderRadius: BorderRadius.circular(30),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFFE50914).withValues(alpha: 0.4),
+                                        blurRadius: 16,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.play_arrow_rounded, color: Colors.white, size: 22),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Play',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              TvFocusWrapper(
+                                onTap: () => widget.onItemTap(item),
+                                borderRadius: BorderRadius.circular(30),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(color: const Color(0x33FFFFFF), width: 1.2),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.info_outline_rounded, color: Colors.white, size: 18),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Details',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -165,22 +286,23 @@ class _HeroBannerState extends State<HeroBanner> {
                 );
               },
             ),
-            // Page Indicators
+
+            // 4. Cineko Pill Slide Indicators (Expanded bar for active slide)
             Positioned(
-              bottom: 16,
-              left: 0,
-              right: 0,
+              bottom: 24,
+              right: 56,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: List.generate(
                   widget.items.length,
-                  (index) => Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    width: _currentPage == index ? 24 : 8,
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: _currentPage == index ? Colors.white : Colors.white38,
+                      borderRadius: BorderRadius.circular(4),
+                      color: _currentPage == index ? const Color(0xFFE50914) : const Color(0x40FFFFFF),
                     ),
                   ),
                 ),

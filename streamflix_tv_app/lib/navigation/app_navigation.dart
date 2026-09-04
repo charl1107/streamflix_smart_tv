@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:streamflix_tv/screens/home_screen.dart';
 import 'package:streamflix_tv/screens/movies_screen.dart';
 import 'package:streamflix_tv/screens/shows_screen.dart';
+import 'package:streamflix_tv/screens/anime_screen.dart';
 import 'package:streamflix_tv/screens/search_screen.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
 
@@ -19,20 +20,22 @@ class _AppNavigationState extends State<AppNavigation> {
     HomeScreen(),
     MoviesScreen(),
     ShowsScreen(),
+    AnimeScreen(),
     SearchScreen(),
   ];
 
   final List<_NavDestination> _destinations = const [
     _NavDestination(title: 'Home', icon: Icons.home_rounded),
     _NavDestination(title: 'Movies', icon: Icons.movie_rounded),
-    _NavDestination(title: 'TV Shows', icon: Icons.tv_rounded),
+    _NavDestination(title: 'Shows', icon: Icons.tv_rounded),
+    _NavDestination(title: 'Anime', icon: Icons.auto_awesome_rounded),
     _NavDestination(title: 'Search', icon: Icons.search_rounded),
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: const Color(0xFF09090B),
       body: Stack(
         children: [
           // Content screen occupying 100% width and height
@@ -43,7 +46,7 @@ class _AppNavigationState extends State<AppNavigation> {
             ),
           ),
 
-          // Floating Top Navigation Bar
+          // Floating Frosted Header
           Positioned(
             top: 0,
             left: 0,
@@ -55,52 +58,72 @@ class _AppNavigationState extends State<AppNavigation> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.black.withValues(alpha: 0.9),
-                    Colors.black.withValues(alpha: 0.5),
+                    Colors.black.withValues(alpha: 0.95),
+                    Colors.black.withValues(alpha: 0.6),
                     Colors.transparent,
                   ],
-                  stops: const [0.0, 0.6, 1.0],
+                  stops: const [0.0, 0.65, 1.0],
                 ),
               ),
               child: Row(
                 children: [
-                  // App Brand Logo
+                  // Cineko Brand Header
                   Row(
                     children: [
+                      // Cineko Red Playback Ring Logo
                       Container(
-                        padding: const EdgeInsets.all(8),
+                        width: 38,
+                        height: 38,
                         decoration: BoxDecoration(
-                          color: Colors.blueAccent,
-                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFF141417),
+                          shape: BoxShape.circle,
+                          border: Border.all(color: const Color(0xFFE50914), width: 2.2),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.blueAccent.withValues(alpha: 0.4),
-                              blurRadius: 12,
+                              color: const Color(0xFFE50914).withValues(alpha: 0.45),
+                              blurRadius: 14,
                             ),
                           ],
                         ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          color: Colors.white,
-                          size: 20,
+                        child: const Center(
+                          child: Icon(
+                            Icons.play_arrow_rounded,
+                            color: Color(0xFFE50914),
+                            size: 22,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 12),
-                      const Text(
-                        'STREAMFLIX',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 2.0,
-                        ),
+                      const Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'CINEKO',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.5,
+                            ),
+                          ),
+                          Text(
+                            'YOUR OPEN CINEMA',
+                            style: TextStyle(
+                              color: Color(0xFFFBBF24),
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 1.2,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
 
                   const SizedBox(width: 48),
 
-                  // Navigation Tabs
+                  // Navigation Tabs (Pill style matching streamflix-cf)
                   Expanded(
                     child: Row(
                       children: List.generate(_destinations.length, (index) {
@@ -108,44 +131,54 @@ class _AppNavigationState extends State<AppNavigation> {
                         final isSelected = _selectedIndex == index;
 
                         return Padding(
-                          padding: const EdgeInsets.only(right: 16.0),
+                          padding: const EdgeInsets.only(right: 14.0),
                           child: TvFocusWrapper(
                             onTap: () {
                               setState(() {
                                 _selectedIndex = index;
                               });
                             },
+                            borderRadius: BorderRadius.circular(30),
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.blueAccent.withValues(alpha: 0.25)
+                                    ? const Color(0xFFE50914)
                                     : Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(24),
+                                borderRadius: BorderRadius.circular(30),
                                 border: Border.all(
                                   color: isSelected
-                                      ? Colors.blueAccent
-                                      : Colors.white.withValues(alpha: 0.12),
-                                  width: 1.5,
+                                      ? const Color(0xFFE50914)
+                                      : const Color(0x2EFFFFFF),
+                                  width: 1.2,
                                 ),
+                                boxShadow: isSelected
+                                    ? [
+                                        BoxShadow(
+                                          color: const Color(0xFFE50914).withValues(alpha: 0.45),
+                                          blurRadius: 14,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : [],
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
                                     dest.icon,
-                                    size: 18,
-                                    color: isSelected ? Colors.blueAccent : Colors.white70,
+                                    size: 17,
+                                    color: isSelected ? Colors.white : Colors.white70,
                                   ),
                                   const SizedBox(width: 8),
                                   Text(
                                     dest.title,
                                     style: TextStyle(
                                       color: isSelected ? Colors.white : Colors.white70,
-                                      fontSize: 15,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                                      letterSpacing: 0.5,
+                                      fontSize: 14.5,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                                      letterSpacing: 0.3,
                                     ),
                                   ),
                                 ],

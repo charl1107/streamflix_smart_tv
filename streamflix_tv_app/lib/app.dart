@@ -11,7 +11,7 @@ class StreamflixApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Streamflix',
+      title: 'Cineko — Your Open Cinema',
       debugShowCheckedModeBanner: false,
       theme: TvTheme.darkTheme,
       home: const AppNavigation(),

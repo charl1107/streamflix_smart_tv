@@ -1,12 +1,12 @@
 {
-    "name": "streamflix_tv",
-    "short_name": "streamflix_tv",
+    "name": "Cineko — Your Open Cinema",
+    "short_name": "Cineko",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#09090B",
+    "theme_color": "#E50914",
+    "description": "Cineko — Your Open Cinema TV & Web Player",
+    "orientation": "any",
     "prefer_related_applications": false,
     "icons": [
         {

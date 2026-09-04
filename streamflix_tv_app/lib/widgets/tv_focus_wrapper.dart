@@ -5,12 +5,14 @@ class TvFocusWrapper extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
   final bool autofocus;
+  final BorderRadius? borderRadius;
 
   const TvFocusWrapper({
     super.key,
     required this.child,
     required this.onTap,
     this.autofocus = false,
+    this.borderRadius,
   });
 
   @override
@@ -43,6 +45,8 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    final effectiveRadius = widget.borderRadius ?? BorderRadius.circular(16);
+
     return Focus(
       focusNode: _focusNode,
       autofocus: widget.autofocus,
@@ -62,23 +66,23 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
         onTap: widget.onTap,
         child: AnimatedScale(
           scale: _isFocused ? 1.05 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeInOut,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOutCubic,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               border: Border.all(
-                color: _isFocused ? Colors.blue : Colors.transparent,
-                width: 2.0,
+                color: _isFocused ? const Color(0xFFE50914) : Colors.transparent,
+                width: 2.2,
               ),
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: effectiveRadius,
               boxShadow: _isFocused
                   ? [
                       BoxShadow(
-                        color: Colors.blue.withValues(alpha: 0.5),
-                        blurRadius: 10,
-                        spreadRadius: 2,
+                        color: const Color(0xFFE50914).withValues(alpha: 0.55),
+                        blurRadius: 16,
+                        spreadRadius: 3,
                       )
                     ]
                   : [],

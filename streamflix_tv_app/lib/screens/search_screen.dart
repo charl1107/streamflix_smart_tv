@@ -58,14 +58,14 @@ class _SearchScreenState extends State<SearchScreen> {
               autofocus: true,
               onChanged: _onSearchChanged,
               onSubmitted: _onSearchSubmitted,
-              style: const TextStyle(color: Colors.white, fontSize: 18),
+              style: const TextStyle(color: Colors.white, fontSize: 17),
               decoration: InputDecoration(
-                hintText: 'Search for movies and TV shows...',
-                hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon: const Icon(Icons.search, color: Colors.blueAccent),
+                hintText: 'Search for movies, shows, and anime...',
+                hintStyle: const TextStyle(color: Colors.white54, fontSize: 16),
+                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE50914), size: 24),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, color: Colors.white54),
+                        icon: const Icon(Icons.clear_rounded, color: Colors.white54),
                         onPressed: () {
                           _searchController.clear();
                           context.read<SearchProvider>().clearSearch();
@@ -73,15 +73,19 @@ class _SearchScreenState extends State<SearchScreen> {
                       )
                     : null,
                 filled: true,
-                fillColor: const Color(0xFF1E1E1E),
+                fillColor: const Color(0xFF141417),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: const BorderSide(color: Color(0x2EFFFFFF), width: 1),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: const BorderSide(color: Color(0x2EFFFFFF), width: 1),
                 ),
                 focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Colors.blueAccent, width: 2),
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: const BorderSide(color: Color(0xFFE50914), width: 2),
                 ),
               ),
             ),

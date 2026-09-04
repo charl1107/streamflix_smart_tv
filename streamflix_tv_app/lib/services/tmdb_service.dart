@@ -59,4 +59,25 @@ class TmdbService {
     final genres = data['genres'] as List<dynamic>? ?? [];
     return genres.map((json) => Genre.fromJson(Map<String, dynamic>.from(json))).toList();
   }
+
+  // Anime fetchers (Animation genre 16 from TV / Awit)
+  Future<List<MediaItem>> getAnimeTrending() async {
+    final data = await _api.get('/discover', queryParameters: {
+      'type': 'tv',
+      'genre': 16,
+      'sort_by': 'popularity.desc',
+    });
+    final results = data['results'] as List<dynamic>? ?? [];
+    return results.map((json) => MediaItem.fromTmdbJson(Map<String, dynamic>.from(json), defaultMediaType: 'anime')).toList();
+  }
+
+  Future<List<MediaItem>> getAnimePopular() async {
+    final data = await _api.get('/discover', queryParameters: {
+      'type': 'movie',
+      'genre': 16,
+      'sort_by': 'vote_average.desc',
+    });
+    final results = data['results'] as List<dynamic>? ?? [];
+    return results.map((json) => MediaItem.fromTmdbJson(Map<String, dynamic>.from(json), defaultMediaType: 'anime')).toList();
+  }
 }
