@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -37,6 +38,10 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    if (kIsWeb && !_initialized) {
+      _initialized = true;
+      return;
+    }
     if (!_initialized) {
       final args =
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;

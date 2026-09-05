@@ -10,14 +10,17 @@ class ApiService {
   }
 
   ApiService._internal() {
+    final headers = <String, String>{};
+    if (ApiConfig.appSecret.isNotEmpty) {
+      headers['X-App-Secret'] = ApiConfig.appSecret;
+    }
+
     _dio = Dio(BaseOptions(
       baseUrl: ApiConfig.backendBaseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
       queryParameters: {'language': 'en-US'},
-      headers: {
-        'X-App-Secret': ApiConfig.appSecret,
-      },
+      headers: headers,
     ));
 
     _dio.interceptors.add(InterceptorsWrapper(

@@ -69,17 +69,48 @@ app.use("*", async (c, next) => {
 
 // ── App Secret Authorization ───────────────────────────
 app.use("/api/*", async (c, next) => {
-  if (
-    c.req.path === "/api/health" ||
-    c.req.path === "/api/player" ||
-    c.req.path === "/api/streams" ||
-    c.req.path === "/api/subtitles" ||
-    c.req.path.startsWith("/api/m3u8") ||
-    c.req.path.startsWith("/api/embed") ||
-    c.req.path.startsWith("/api/extensions")
-  ) {
+  const path = c.req.path;
+  const publicPaths = [
+    "/api/health",
+    "/api/trending",
+    "/api/search",
+    "/api/discover",
+    "/api/genres",
+    "/api/movie",
+    "/api/tv",
+    "/api/anime/trending",
+    "/api/anime/popular",
+    "/api/anime/recent",
+    "/api/anime/search",
+    "/api/player",
+    "/api/streams",
+    "/api/subtitles",
+    "/api/extensions",
+  ];
+
+  const isPublic =
+    path === "/api/health" ||
+    path.startsWith("/api/trending") ||
+    path.startsWith("/api/search") ||
+    path.startsWith("/api/discover") ||
+    path.startsWith("/api/genres") ||
+    path.startsWith("/api/movie") ||
+    path.startsWith("/api/tv") ||
+    path.startsWith("/api/anime/trending") ||
+    path.startsWith("/api/anime/popular") ||
+    path.startsWith("/api/anime/recent") ||
+    path.startsWith("/api/anime/search") ||
+    path === "/api/player" ||
+    path === "/api/streams" ||
+    path === "/api/subtitles" ||
+    path.startsWith("/api/m3u8") ||
+    path.startsWith("/api/embed") ||
+    path.startsWith("/api/extensions");
+
+  if (isPublic) {
     return next();
   }
+
   const appSecret = c.env.APP_SECRET;
   if (appSecret) {
     const clientSecret = c.req.header("X-App-Secret");

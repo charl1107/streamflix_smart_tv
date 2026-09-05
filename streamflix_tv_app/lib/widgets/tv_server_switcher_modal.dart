@@ -24,17 +24,12 @@ class TvServerSwitcherModal extends StatefulWidget {
 }
 
 class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
-  late final List<FocusNode> _providerFocusNodes;
   late final List<FocusNode> _serverFocusNodes;
   int _focusedIndex = 0;
 
   @override
   void initState() {
     super.initState();
-    _providerFocusNodes = List.generate(
-      EmbedService.providers.length,
-      (index) => FocusNode(),
-    );
     _serverFocusNodes = List.generate(
       VidnestService.servers.length,
       (index) => FocusNode(),
@@ -55,9 +50,6 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
 
   @override
   void dispose() {
-    for (final node in _providerFocusNodes) {
-      node.dispose();
-    }
     for (final node in _serverFocusNodes) {
       node.dispose();
     }
@@ -145,48 +137,43 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
               ),
               const SizedBox(height: 8),
               Text(
-                'If your current stream buffers or fails, switch to an alternate embed provider or Vidnest mirror. Position is preserved.',
+                'If your current stream buffers or fails, switch to another Vidnest mirror server. Position is preserved.',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 13,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // Embed Provider Selector Row
+              // Provider Badge
               Row(
                 children: [
                   Text(
-                    'Embed Source:',
+                    'Provider:',
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(EmbedService.providers.length, (idx) {
-                          final provider = EmbedService.providers[idx];
-                          final isCurrent = provider.id.toLowerCase() == widget.activeProviderId.toLowerCase();
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: _ProviderChip(
-                              provider: provider,
-                              isActive: isCurrent,
-                              focusNode: _providerFocusNodes[idx],
-                              onTap: () {
-                                if (widget.onProviderSelected != null) {
-                                  widget.onProviderSelected!(provider);
-                                }
-                              },
-                            ),
-                          );
-                        }),
-                      ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE50914).withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFE50914).withValues(alpha: 0.6)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified, color: Color(0xFFE50914), size: 14),
+                        SizedBox(width: 5),
+                        Text(
+                          'Vidnest Official (9 Fast CDN Mirrors)',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -206,8 +193,7 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
                   ),
                   itemBuilder: (context, index) {
                     final server = VidnestService.servers[index];
-                    final isActive = server.id.toLowerCase() == widget.activeServerId.toLowerCase() &&
-                        widget.activeProviderId.toLowerCase() == 'vidnest';
+                    final isActive = server.id.toLowerCase() == widget.activeServerId.toLowerCase();
 
                     return _ServerCard(
                       server: server,
@@ -231,109 +217,6 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProviderChip extends StatefulWidget {
-  final EmbedProvider provider;
-  final bool isActive;
-  final FocusNode focusNode;
-  final VoidCallback onTap;
-
-  const _ProviderChip({
-    required this.provider,
-    required this.isActive,
-    required this.focusNode,
-    required this.onTap,
-  });
-
-  @override
-  State<_ProviderChip> createState() => _ProviderChipState();
-}
-
-class _ProviderChipState extends State<_ProviderChip> {
-  bool _isFocused = false;
-
-  @override
-  void initState() {
-    super.initState();
-    widget.focusNode.addListener(_onFocusChange);
-  }
-
-  @override
-  void dispose() {
-    widget.focusNode.removeListener(_onFocusChange);
-    super.dispose();
-  }
-
-  void _onFocusChange() {
-    if (mounted) {
-      setState(() => _isFocused = widget.focusNode.hasFocus);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final borderColor = _isFocused
-        ? const Color(0xFFE50914)
-        : (widget.isActive ? const Color(0xFFE50914).withValues(alpha: 0.6) : Colors.white.withValues(alpha: 0.15));
-
-    final bgColor = _isFocused
-        ? const Color(0xFFE50914).withValues(alpha: 0.25)
-        : (widget.isActive ? const Color(0xFFE50914).withValues(alpha: 0.2) : Colors.white.withValues(alpha: 0.05));
-
-    return InkWell(
-      focusNode: widget.focusNode,
-      onTap: widget.onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-        decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: borderColor, width: _isFocused ? 2.0 : 1.0),
-          boxShadow: _isFocused
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFFE50914).withValues(alpha: 0.4),
-                    blurRadius: 10,
-                    spreadRadius: 1,
-                  ),
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (widget.isActive) ...[
-              const Icon(Icons.check, color: Color(0xFFE50914), size: 14),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              widget.provider.name,
-              style: TextStyle(
-                color: widget.isActive || _isFocused ? Colors.white : Colors.white70,
-                fontSize: 13,
-                fontWeight: widget.isActive ? FontWeight.bold : FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Text(
-                widget.provider.badge,
-                style: const TextStyle(color: Colors.white60, fontSize: 9, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -3,6 +3,68 @@ import { resolveAllStreams } from "../extensions/index.js";
 
 const app = new Hono();
 
+const BLOCKED_REDIRECT_DOMAINS = [
+  "doubleclick.net", "googlesyndication.com", "googleadservices.com", "googletagmanager.com",
+  "googletagservices.com", "google-analytics.com", "analytics.google.com", "segment.io",
+  "segment.com", "mixpanel.com", "amplitude.com", "hotjar.com", "sentry.io", "intercom.io",
+  "scorecardresearch.com", "branch.io", "posthog.com", "facebook.net", "connect.facebook.net",
+  "linkedin.com", "pendo.io", "optimizely.com", "fullstory.com", "clarity.ms", "matomo.org",
+  "plausible.io", "newrelic.com", "datadoghq.com", "onesignal.com", "pixel.facebook.com",
+  "ads.doubleclick.net", "stats.g.doubleclick.net", "www.google-analytics.com",
+  "www.googletagmanager.com", "adservice.google.com", "pagead2.googlesyndication.com", "mopub.com",
+  "adblock", "adblockplus", "adguard", "ublock", "ublockorigin", "adblocker", "adblockers",
+  "easylist", "fanboy", "antiadblock", "adguarddns", "adblockanalytics",
+  "obiitpudent.shop", "xl.obiitpudent.shop"
+];
+
+function isBlockedRedirectUrl(value) {
+  if (!value) return true;
+  try {
+    const url = new URL(value);
+    const host = url.hostname.toLowerCase();
+    return BLOCKED_REDIRECT_DOMAINS.some((domain) => host.includes(domain) || value.toLowerCase().includes(domain));
+  } catch {
+    return true;
+  }
+}
+
+function sanitizeEmbedUrl(rawUrl) {
+  if (!rawUrl) return "";
+  const trimmed = String(rawUrl).trim();
+  if (!trimmed) return "";
+  if (isBlockedRedirectUrl(trimmed)) {
+    return "";
+  }
+  try {
+    const url = new URL(trimmed);
+    const host = url.hostname.toLowerCase();
+    if (!host.includes("vidnest.fun") && !host.includes("streamflix") && !host.includes("cloudflare") && !host.includes("workers.dev")) {
+      return "";
+    }
+    return url.toString();
+  } catch {
+    return "";
+  }
+}
+
+async function resolveSafeEmbedUrl(rawUrl, fallbackUrl) {
+  const safeUrl = sanitizeEmbedUrl(rawUrl);
+  if (!safeUrl) return fallbackUrl;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const response = await fetch(safeUrl, { method: "HEAD", signal: controller.signal, redirect: "follow" });
+    clearTimeout(timeout);
+    if (response.ok || response.status === 403 || response.status === 405) {
+      return safeUrl;
+    }
+    return fallbackUrl;
+  } catch {
+    return fallbackUrl;
+  }
+}
+
 // Supported Vidnest streaming servers
 const VIDNEST_SERVERS = [
   { id: "lamda", name: "Lamda", badge: "Fast", desc: "Primary High-Speed Mirror" },
@@ -149,6 +211,10 @@ app.get("/player", async (c) => {
   if (startAt > 0) {
     embedUrl += `&startAt=${startAt}`;
   }
+
+  const fallbackUrl = "https://vidnest.fun/movie/324857?server=lamda";
+  const safeEmbedUrl = sanitizeEmbedUrl(embedUrl);
+  const finalEmbedUrl = await resolveSafeEmbedUrl(safeEmbedUrl || embedUrl, fallbackUrl);
 
   const serversJson = JSON.stringify(VIDNEST_SERVERS);
 
@@ -358,9 +424,9 @@ app.get("/player", async (c) => {
   <!-- Sandboxed Vidnest Embed Iframe -->
   <iframe
     id="vidnest-iframe"
-    src="${embedUrl}"
+    src="${finalEmbedUrl}"
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-    sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+    referrerpolicy="strict-origin-when-cross-origin"
     allowfullscreen>
   </iframe>
 
@@ -392,13 +458,13 @@ app.get("/player", async (c) => {
         const div = document.createElement('div');
         div.className = 'server-card' + (s.id.toLowerCase() === currentServer.toLowerCase() ? ' active' : '');
         div.tabIndex = 0;
-        div.innerHTML = `
-          <div class="server-card-top">
-            <span>\${s.name}</span>
-            <span class="server-badge">\${s.badge}</span>
-          </div>
-          <div class="server-card-desc">\${s.desc}</div>
-        `;
+        div.innerHTML = [
+          '<div class="server-card-top">',
+          '<span>' + s.name + '</span>',
+          '<span class="server-badge">' + s.badge + '</span>',
+          '</div>',
+          '<div class="server-card-desc">' + s.desc + '</div>'
+        ].join('');
         div.onclick = () => switchServer(s.id);
         div.onkeydown = (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -443,6 +509,12 @@ app.get("/player", async (c) => {
 
       if (currentSeconds > 0) {
         nextUrl += "&startAt=" + currentSeconds;
+      }
+
+      const allowed = /^https:\/\/[A-Za-z0-9.-]*vidnest\.fun\//i.test(nextUrl) || /^https:\/\/.*streamflix/i.test(nextUrl) || /^https:\/\/.*workers\.dev/i.test(nextUrl);
+      if (!allowed) {
+        console.warn('[Player Redirect Guard] Blocked unsafe redirect target:', nextUrl);
+        return;
       }
 
       iframe.src = nextUrl;

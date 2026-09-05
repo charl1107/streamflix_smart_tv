@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:streamflix_tv/models/media_item.dart';
 import 'package:streamflix_tv/config/api_config.dart';
+import 'package:streamflix_tv/platform/player_router.dart';
 import 'package:streamflix_tv/services/tmdb_service.dart';
 import 'package:streamflix_tv/services/embed_service.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
@@ -77,21 +78,24 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
+  void _openPlayerUrl(String embedUrl, {String? title, int? season, int? episode}) {
+    PlayerRouter.open(
+      context,
+      embedUrl: embedUrl,
+      title: title ?? _mediaItem.title,
+      mediaId: _mediaItem.id,
+      mediaType: _mediaItem.mediaType,
+      season: season,
+      episode: episode,
+    );
+  }
+
   void _onPlayPressed() {
     final isAnime = _mediaItem.mediaType == 'anime';
-    final embedUrl = isAnime 
+    final embedUrl = isAnime
         ? EmbedService.getAnimeUrl(_mediaItem.id, 1, 1)
         : EmbedService.getMovieUrl(_mediaItem.id);
-    Navigator.pushNamed(
-      context, 
-      '/player', 
-      arguments: {
-        'embedUrl': embedUrl, 
-        'title': _mediaItem.title,
-        'mediaId': _mediaItem.id,
-        'mediaType': _mediaItem.mediaType,
-      },
-    );
+    _openPlayerUrl(embedUrl, title: _mediaItem.title);
   }
 
   void _onEpisodeTap(int episodeNumber) {
@@ -100,17 +104,11 @@ class _DetailScreenState extends State<DetailScreen> {
         ? EmbedService.getAnimeUrl(_mediaItem.id, _selectedSeason, episodeNumber)
         : EmbedService.getTvUrl(_mediaItem.id, _selectedSeason, episodeNumber);
 
-    Navigator.pushNamed(
-      context, 
-      '/player', 
-      arguments: {
-        'embedUrl': embedUrl,
-        'title': '${_mediaItem.title} - S$_selectedSeason Ep $episodeNumber',
-        'mediaId': _mediaItem.id,
-        'mediaType': _mediaItem.mediaType,
-        'season': _selectedSeason,
-        'episode': episodeNumber,
-      },
+    _openPlayerUrl(
+      embedUrl,
+      title: '${_mediaItem.title} - S$_selectedSeason Ep $episodeNumber',
+      season: _selectedSeason,
+      episode: episodeNumber,
     );
   }
 

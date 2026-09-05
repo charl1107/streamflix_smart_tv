@@ -1,7 +1,7 @@
 class ApiConfig {
   // Backend base URL - deployed Cloudflare Worker
   static const String backendBaseUrl = 'https://streamflix-tv-backend.dominicmariano140.workers.dev/api';
-  static const String appSecret = 'streamflix_tv_sec_7f9a2e8c1b';
+  static const String appSecret = String.fromEnvironment('APP_SECRET', defaultValue: '');
   static const String tmdbImageBase = 'https://image.tmdb.org/t/p';
 
   // AniList OAuth / API Credentials (Passed securely via --dart-define or .env, never exposed on push)

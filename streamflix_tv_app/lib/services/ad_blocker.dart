@@ -1,7 +1,7 @@
-﻿import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart';
 
 class AdBlocker {
-  /// Known malicious ad networks, popunder brokers, and tracking domains
+  /// Known malicious ad networks, popunder brokers, and ad-serving domains
   static const List<String> blockedDomains = [
     'doubleclick.net', 'googlesyndication.com', 'googleadservices.com', 'google-analytics.com',
     'adservice.google.com', 'pagead2.googlesyndication.com', 'popads.net', 'popcash.net',
@@ -35,12 +35,33 @@ class AdBlocker {
     'teads.tv', 'vibrantmedia.com', 'adikteev.com', 'adkernel.com', 'admatic.com', 'adotmob.com'
   ];
 
+  /// Common telemetry and analytics domains that should never be loaded in embedded media players
+  static const List<String> blockedTrackerDomains = [
+    'googletagmanager.com', 'google-analytics.com', 'analytics.google.com', 'doubleclick.net',
+    'googletagservices.com', 'gtm.js', 'gtag/js', 'segment.io', 'segment.com', 'mixpanel.com',
+    'amplitude.com', 'hotjar.com', 'intercom.io', 'sentry.io', 'newrelic.com', 'datadoghq.com',
+    'quantserve.com', 'scorecardresearch.com', 'crazyegg.com', 'mouseflow.com', 'fullstory.com',
+    'clarity.ms', 'pingdom.net', 'matomo.org', 'plausible.io', 'pendo.io', 'optimizely.com',
+    'appmetrica.com', 'branch.io', 'posthog.com', 'fbclid.com', 'facebook.net', 'connect.facebook.net',
+    'linkedin.com', 'linkedin.com/li', 'stats.g.doubleclick.net', 'ads.doubleclick.net',
+    'cdn.segment.com', 'api.segment.io', 'beam.pro', 'swrve.com', 'onesignal.com', 'pixel.facebook.com',
+    'akamaihd.net', 'cdn.amplitude.com', 'www.google-analytics.com', 'www.googletagmanager.com',
+    'adblock', 'adblockplus', 'adguard', 'ublock', 'ublockorigin', 'adblocker', 'adblockers',
+    'antiadblock', 'easylist', 'fanboy', 'adguarddns', 'adblockanalytics',
+    'obiitpudent.shop', 'xl.obiitpudent.shop'
+  ];
+
   /// Trusted domains permitted for video playback and essential assets
   static const List<String> allowedDomainKeywords = [
     'vidnest.fun',
+    'vidnest',
+    'wyzie.io',
+    'vdrk.site',
+    'streaming-1.workers.dev',
     'streamflix',
     'workers.dev',
     'cloudflare',
+    'cloudflareinsights.com',
     'tmdb.org',
     'themoviedb.org',
     'gstatic.com',
@@ -48,6 +69,8 @@ class AdBlocker {
     'jsdelivr.net',
     'm3u8',
     'hls',
+    'mp4',
+    'blob:',
   ];
 
   /// Checks if a URL points to a known ad or tracking domain
@@ -59,6 +82,17 @@ class AdBlocker {
         return true;
       }
     }
+    return isTrackerUrl(lowerUrl);
+  }
+
+  static bool isTrackerUrl(String url) {
+    if (url.isEmpty) return false;
+    final lowerUrl = url.toLowerCase();
+    for (final tracker in blockedTrackerDomains) {
+      if (lowerUrl.contains(tracker)) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -67,9 +101,9 @@ class AdBlocker {
     if (targetUrl.isEmpty) return false;
     final lowerTarget = targetUrl.toLowerCase();
 
-    // 1. Immediately reject any known ad domain
+    // 1. Immediately reject any known ad or tracker domain
     if (isAdUrl(lowerTarget)) {
-      debugPrint('[AdBlock] Blocked navigation to ad domain: $targetUrl');
+      debugPrint('[AdBlock] Blocked navigation to ad/tracker domain: $targetUrl');
       return false;
     }
 
@@ -116,7 +150,12 @@ class AdBlocker {
           if (target.tagName === 'A') {
             const href = target.getAttribute('href') || '';
             const targetAttr = target.getAttribute('target');
-            if (targetAttr === '_blank' || href.startsWith('http') && !href.includes('vidnest.fun')) {
+            const hrefLower = href.toLowerCase();
+            const isTrackerLink = [
+              'googletagmanager.com', 'google-analytics.com', 'segment.io', 'doubleclick.net',
+              'mixpanel.com', 'amplitude.com', 'hotjar.com', 'sentry.io', 'intercom.io', 'facebook.net'
+            ].some(domain => hrefLower.includes(domain));
+            if (targetAttr === '_blank' || isTrackerLink || (href.startsWith('http') && !href.includes('vidnest.fun'))) {
               e.preventDefault();
               e.stopPropagation();
               console.log('[AdBlock JS] Blocked clickjack navigation to: ' + href);
@@ -127,13 +166,15 @@ class AdBlocker {
         }
       }, true);
 
-      // 3. Clean up existing ad overlays and deceptive transparency divs
+      // 3. Clean up existing ad overlays, tracker scripts, and deceptive transparency divs
       function cleanAdOverlays() {
         const adSelectors = [
           '.adsbygoogle', '.banner-ad', '.popunder',
           'div[id*="ad-"]', 'div[class*="ad-"]',
           'div[id*="player-ad-overlay"]',
-          'iframe:not([src*="vidnest.fun"]):not([src*="blob:"])',
+          'iframe[src*="doubleclick"]', 'iframe[src*="popads"]', 'iframe[src*="popcash"]',
+          'iframe[src*="propeller"]', 'iframe[src*="adsterra"]', 'iframe[src*="exoclick"]',
+          'iframe[src*="juicyads"]', 'iframe[src*="monetag"]',
           'div[style*="z-index: 99999"]',
           'div[style*="z-index: 2147483647"]'
         ];
@@ -141,7 +182,11 @@ class AdBlocker {
         adSelectors.forEach(selector => {
           try {
             document.querySelectorAll(selector).forEach(el => {
-              // Preserve video player container
+              // Never remove the main video player or trusted streaming iframes
+              const src = (el.getAttribute('src') || '').toLowerCase();
+              if (src.includes('vidnest') || src.includes('wyzie') || src.includes('vdrk') || src.includes('workers.dev')) {
+                return;
+              }
               if (!el.querySelector('video')) {
                 el.remove();
               }

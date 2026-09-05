@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -8,6 +9,7 @@ import '../services/vidnest_service.dart';
 import '../services/embed_service.dart';
 import '../widgets/tv_focus_wrapper.dart';
 import '../widgets/tv_server_switcher_modal.dart';
+import '../widgets/web_iframe.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -60,7 +62,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
           _embedUrl = 'https://vidnest.fun/movie/324857';
         }
 
-        _initWebView();
+        if (!kIsWeb) {
+          _initWebView();
+        } else {
+          _isLoading = false;
+        }
         _initialized = true;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -165,12 +171,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
           },
         ),
       )
-      ..loadRequest(
-        Uri.parse(_embedUrl),
-        headers: {
-          'Referer': 'https://vidnest.fun/',
-        },
-      );
+      ..loadRequest(Uri.parse(_embedUrl));
   }
 
   void _showHudBadge(String text, IconData icon) {
@@ -190,6 +191,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Future<int> _fetchCurrentPlaybackSeconds() async {
+    if (kIsWeb) return 0;
     try {
       final jsResult = await _controller.runJavaScriptReturningResult('''
         (function() {
@@ -206,6 +208,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Future<void> _togglePlayPause() async {
+    if (kIsWeb) return;
     try {
       final result = await _controller.runJavaScriptReturningResult('''
         (function() {
@@ -243,6 +246,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   Future<void> _seekRelative(int seconds) async {
+    if (kIsWeb) return;
     try {
       final result = await _controller.runJavaScriptReturningResult('''
         (function() {
@@ -284,6 +288,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   /// Triggers the embed's built-in Server Selection menu (Cloud icon)
   Future<void> triggerEmbedServerMenu() async {
+    if (kIsWeb) return;
     try {
       await _controller.runJavaScript('''
         (function() {
@@ -298,6 +303,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   /// Triggers the embed's built-in Captions / Subtitles toggle
   Future<void> triggerEmbedCaptions() async {
+    if (kIsWeb) return;
     try {
       await _controller.runJavaScript('''
         (function() {
@@ -313,6 +319,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   /// Triggers the embed's built-in Settings menu (Gear icon)
   Future<void> triggerEmbedSettings() async {
+    if (kIsWeb) return;
     try {
       await _controller.runJavaScript('''
         (function() {
@@ -351,10 +358,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     _showHudBadge('Switched to ${provider.name}', Icons.cloud_sync);
 
-    await _controller.loadRequest(
-      Uri.parse(_embedUrl),
-      headers: {'Referer': 'https://vidnest.fun/'},
-    );
+    if (!kIsWeb) {
+      await _controller.loadRequest(Uri.parse(_embedUrl));
+    } else {
+      if (mounted) setState(() => _isLoading = false);
+    }
 
     if (mounted) {
       _tvInputFocusNode.requestFocus();
@@ -381,10 +389,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     _showHudBadge('Switched to ${server.name} (${_formatDuration(_lastPlaybackSeconds)})', Icons.dns);
 
-    await _controller.loadRequest(
-      Uri.parse(_embedUrl),
-      headers: {'Referer': 'https://vidnest.fun/'},
-    );
+    if (!kIsWeb) {
+      await _controller.loadRequest(Uri.parse(_embedUrl));
+    } else {
+      if (mounted) setState(() => _isLoading = false);
+    }
 
     if (mounted) {
       _tvInputFocusNode.requestFocus();
@@ -467,9 +476,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
           onKeyEvent: _handleTvKeyEvent,
           child: Stack(
             children: [
-              // 1. Embedded Video WebView
+              // 1. Embedded Video Player (Native Android WebView or Web IFrame)
               if (_embedUrl.isNotEmpty)
-                WebViewWidget(controller: _controller),
+                if (kIsWeb)
+                  buildPlatformEmbedView(
+                    embedUrl: _embedUrl,
+                    title: _title,
+                    onLoaded: () {
+                      if (mounted) setState(() => _isLoading = false);
+                    },
+                  )
+                else
+                  WebViewWidget(controller: _controller),
 
               // 2. Loading Indicator
               if (_isLoading)
@@ -551,10 +569,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.cloud_sync, color: Colors.white, size: 18),
+                            const Icon(Icons.dns, color: Colors.white, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              'Source: ${EmbedService.findProvider(_activeProviderId).name}${_activeProviderId == "vidnest" ? " • ${VidnestService.findServer(_activeServerId).name}" : ""} (▲)',
+                              'Server: ${VidnestService.findServer(_activeServerId).name} (▲)',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,
