@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:streamflix_tv/models/media_item.dart';
 import 'package:streamflix_tv/config/api_config.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class HeroBanner extends StatefulWidget {
   final List<MediaItem> items;
@@ -33,6 +34,7 @@ class _HeroBannerState extends State<HeroBanner> {
 
   void _startAutoPlay() {
     if (widget.items.isEmpty) return;
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 6), (timer) {
       if (_pageController.hasClients) {
         int nextPage = _currentPage + 1;
@@ -46,6 +48,15 @@ class _HeroBannerState extends State<HeroBanner> {
         );
       }
     });
+  }
+
+  void _onActionFocusChanged(bool isFocused) {
+    if (isFocused) {
+      _timer?.cancel();
+      _timer = null;
+    } else if (_timer == null) {
+      _startAutoPlay();
+    }
   }
 
   @override
@@ -144,9 +155,8 @@ class _HeroBannerState extends State<HeroBanner> {
 
     return SizedBox(
       width: double.infinity,
-      child: AspectRatio(
-        aspectRatio: 16 / 9,
-        child: Stack(
+      height: TvLayout.heroHeight(context),
+      child: Stack(
           children: [
             PageView.builder(
               controller: _pageController,
@@ -204,8 +214,8 @@ class _HeroBannerState extends State<HeroBanner> {
 
                     // 3. Left-Aligned Content block
                     Positioned(
-                      left: 56,
-                      bottom: 56,
+                      left: TvLayout.horizontalInset(context),
+                      bottom: TvLayout.horizontalInset(context),
                       right: 240,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,6 +309,8 @@ class _HeroBannerState extends State<HeroBanner> {
                             children: [
                               TvFocusWrapper(
                                 onTap: () => widget.onItemTap(item),
+                                autofocus: index == 0,
+                                onFocusChange: _onActionFocusChanged,
                                 borderRadius: BorderRadius.circular(30),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 12),
@@ -333,6 +345,7 @@ class _HeroBannerState extends State<HeroBanner> {
                               const SizedBox(width: 14),
                               TvFocusWrapper(
                                 onTap: () => widget.onItemTap(item),
+                                onFocusChange: _onActionFocusChanged,
                                 borderRadius: BorderRadius.circular(30),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -371,7 +384,7 @@ class _HeroBannerState extends State<HeroBanner> {
             // 4. Cineko Pill Slide Indicators (Expanded bar for active slide)
             Positioned(
               bottom: 24,
-              right: 56,
+              right: TvLayout.horizontalInset(context),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: List.generate(
@@ -390,7 +403,6 @@ class _HeroBannerState extends State<HeroBanner> {
               ),
             ),
           ],
-        ),
       ),
     );
   }

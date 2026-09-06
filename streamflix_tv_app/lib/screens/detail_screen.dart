@@ -8,6 +8,7 @@ import 'package:streamflix_tv/services/embed_service.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
 import 'package:streamflix_tv/widgets/episode_grid.dart';
 import 'package:streamflix_tv/widgets/media_rail.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class DetailScreen extends StatefulWidget {
   const DetailScreen({super.key});
@@ -53,10 +54,17 @@ class _DetailScreenState extends State<DetailScreen> {
         await _loadTvSeason(_selectedSeason);
       } else if (_mediaItem.playbackType == 'anime') {
         final anikotoId = _mediaItem.id.toString();
-        _fullDetails = await _tmdbService.getAnimeDetails(anikotoId);
+        // The episode catalogue is independent from optional anime metadata.
+        // Start both requests together so a slow detail response cannot leave
+        // the user with an empty episode screen.
+        final results = await Future.wait([
+          _tmdbService.getAnimeDetails(anikotoId),
+          _tmdbService.getAnimeEpisodes(anikotoId),
+        ]);
+        _fullDetails = results[0] as MediaItem;
         _cast = _fullDetails?.cast ?? [];
         _recommendations = _fullDetails?.recommendations ?? [];
-        _episodes = await _tmdbService.getAnimeEpisodes(anikotoId);
+        _episodes = results[1] as List<dynamic>;
       } else {
         final movieId = int.tryParse(_mediaItem.id.toString()) ?? 0;
         _fullDetails = await _tmdbService.getMovieDetails(movieId);
@@ -146,7 +154,7 @@ class _DetailScreenState extends State<DetailScreen> {
               children: [
                 // Backdrop & Title
                 SizedBox(
-                  height: 400,
+                  height: TvLayout.heroHeight(context),
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
@@ -165,17 +173,17 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       ),
                       Positioned(
-                        left: 48,
-                        bottom: 48,
-                        right: 48,
+                        left: TvLayout.horizontalInset(context),
+                        bottom: TvLayout.horizontalInset(context),
+                        right: TvLayout.horizontalInset(context),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             if (item.posterPath != null && item.posterPath!.isNotEmpty)
                               Container(
-                                width: 140,
-                                height: 210,
-                                margin: const EdgeInsets.only(right: 24),
+                                width: TvLayout.posterWidth(context) * 0.78,
+                                height: TvLayout.posterHeight(context) * 0.78,
+                                margin: EdgeInsets.only(right: TvLayout.sectionGap(context)),
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(12),
                                   image: DecorationImage(
@@ -186,7 +194,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                   ),
                                 ),
                               ),
-                            const SizedBox(width: 24),
+                            SizedBox(width: TvLayout.sectionGap(context)),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -301,8 +309,8 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       ),
                       Positioned(
-                        top: 24,
-                        left: 24,
+                        top: TvLayout.headerTopInset(context) + 12,
+                        left: TvLayout.horizontalInset(context),
                         child: TvFocusWrapper(
                           onTap: () => Navigator.pop(context),
                           child: Container(
@@ -324,7 +332,10 @@ class _DetailScreenState extends State<DetailScreen> {
                     _mediaItem.playbackType == 'anime') ...[
                   if (_mediaItem.playbackType == 'tv' && _totalSeasons > 1)
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 16.0),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: TvLayout.horizontalInset(context),
+                        vertical: TvLayout.sectionGap(context),
+                      ),
                       child: DropdownButton<int>(
                         value: _selectedSeason,
                         dropdownColor: const Color(0xFF1E1E1E),
@@ -346,33 +357,42 @@ class _DetailScreenState extends State<DetailScreen> {
                         },
                       ),
                     ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 48.0, vertical: 8.0),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: TvLayout.horizontalInset(context),
+                      vertical: TvLayout.sectionGap(context) / 2,
+                    ),
                     child: Text(
                       'Episodes',
                       style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                    padding: EdgeInsets.symmetric(horizontal: TvLayout.horizontalInset(context) / 2),
                     child: EpisodeGrid(
                       episodes: _episodes,
                       onEpisodeTap: _onEpisodeTap,
+                      fallbackStillPath: _mediaItem.playbackType == 'anime'
+                          ? (_fullDetails?.backdropPath ?? _mediaItem.backdropPath)
+                          : null,
                     ),
                   ),
                 ],
 
                 // Cast Section
                 if (_cast.isNotEmpty) ...[
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 48.0, vertical: 16.0),
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: TvLayout.horizontalInset(context),
+                      vertical: TvLayout.sectionGap(context),
+                    ),
                     child: Text('Cast', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                   ),
                   SizedBox(
                     height: 120,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
-                      padding: const EdgeInsets.symmetric(horizontal: 48.0),
+                      padding: EdgeInsets.symmetric(horizontal: TvLayout.horizontalInset(context)),
                       itemCount: _cast.length,
                       itemBuilder: (context, index) {
                         final actor = _cast[index];

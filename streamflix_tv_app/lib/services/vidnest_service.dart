@@ -78,9 +78,9 @@ class VidnestService {
   }
 
   /// Builds a Vidnest embed URL for Anime:
-  /// https://vidnest.fun/anime/[ANILIST_ID]/[EPISODE]/[SUB_OR_DUB]
+  /// https://vidnest.fun/anime/[ANIME_ID]/[EPISODE]/[SUB_OR_DUB]
   static String buildAnimeUrl({
-    required dynamic anilistId,
+    required dynamic animeId,
     required int episode,
     String subOrDub = 'sub',
     String? server,
@@ -97,13 +97,13 @@ class VidnestService {
         queryParams.add('$key=$value');
       });
     }
-    return '$baseUrl/anime/$anilistId/$episode/$subOrDub?${queryParams.join('&')}';
+    return '$baseUrl/anime/$animeId/$episode/$subOrDub?${queryParams.join('&')}';
   }
 
   /// Builds a Vidnest embed URL for AnimePahe:
-  /// https://vidnest.fun/animepahe/[ANILIST_ID]/[EPISODE]/[SUB_OR_DUB]
+  /// https://vidnest.fun/animepahe/[ANIME_ID]/[EPISODE]/[SUB_OR_DUB]
   static String buildAnimePaheUrl({
-    required dynamic anilistId,
+    required dynamic animeId,
     required int episode,
     String subOrDub = 'sub',
     String? server,
@@ -120,7 +120,7 @@ class VidnestService {
         queryParams.add('$key=$value');
       });
     }
-    return '$baseUrl/animepahe/$anilistId/$episode/$subOrDub?${queryParams.join('&')}';
+    return '$baseUrl/animepahe/$animeId/$episode/$subOrDub?${queryParams.join('&')}';
   }
 
   /// Generates the standard HTML <iframe> code snippet per documentation:

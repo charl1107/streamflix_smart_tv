@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:streamflix_tv/models/media_item.dart';
 import 'package:streamflix_tv/widgets/media_card.dart';
 import 'package:streamflix_tv/widgets/loading_shimmer.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class MediaRail extends StatelessWidget {
   final dynamic title; // String or Widget
@@ -23,7 +24,10 @@ class MediaRail extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+          padding: EdgeInsets.symmetric(
+            horizontal: TvLayout.horizontalInset(context),
+            vertical: TvLayout.sectionGap(context) / 2,
+          ),
           child: title is String
               ? Text(
                   title as String,
@@ -36,10 +40,10 @@ class MediaRail extends StatelessWidget {
               : title as Widget,
         ),
         SizedBox(
-          height: 180, // adjusted height for rail aspect ratio
+          height: TvLayout.railHeight(context),
           child: isLoading
-              ? const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 24.0),
+              ? Padding(
+                  padding: EdgeInsets.symmetric(horizontal: TvLayout.horizontalInset(context)),
                   child: ShimmerRail(),
                 )
               : items.isEmpty
@@ -50,10 +54,14 @@ class MediaRail extends StatelessWidget {
                       ),
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: TvLayout.horizontalInset(context),
+                        vertical: 8,
+                      ),
                       scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
                       itemCount: items.length,
-                      separatorBuilder: (context, index) => const SizedBox(width: 12),
+                      separatorBuilder: (context, index) => SizedBox(width: TvLayout.sectionGap(context)),
                       itemBuilder: (context, index) {
                         return MediaCard(
                           item: items[index],

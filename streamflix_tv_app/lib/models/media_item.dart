@@ -9,7 +9,7 @@ class MediaItem {
   final String mediaType;
   /// The identifier family used by the playback provider.  The Anime screen is
   /// a catalogue category, not an identifier family: its TMDB results must use
-  /// Vidnest's movie or TV endpoints rather than its AniList-only anime route.
+  /// Vidnest's movie or TV endpoints rather than its dedicated anime route.
   final String playbackType;
   final List<int> genreIds;
   final List<String> genreNames;

@@ -4,6 +4,7 @@ import 'package:streamflix_tv/models/media_item.dart';
 import 'package:streamflix_tv/config/api_config.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
 import 'package:streamflix_tv/widgets/loading_shimmer.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class MediaCard extends StatelessWidget {
   final MediaItem item;
@@ -24,8 +25,8 @@ class MediaCard extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
       child: Container(
-        width: 150,
-        height: 245,
+        width: TvLayout.posterWidth(context),
+        height: TvLayout.posterHeight(context),
         decoration: BoxDecoration(
           color: const Color(0xFF141417),
           borderRadius: BorderRadius.circular(14),

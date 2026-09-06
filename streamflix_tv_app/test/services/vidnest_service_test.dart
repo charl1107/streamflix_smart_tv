@@ -29,9 +29,9 @@ void main() {
       expect(url, 'https://vidnest.fun/tv/94997/1/1?server=alfa&startAt=90');
     });
 
-    test('Builds anime URL with Anilist ID and sub preference', () {
+    test('Builds anime URL with anime ID and sub preference', () {
       final url = VidnestService.buildAnimeUrl(
-        anilistId: 154587,
+        animeId: 154587,
         episode: 1,
         subOrDub: 'sub',
         server: 'primesrc',

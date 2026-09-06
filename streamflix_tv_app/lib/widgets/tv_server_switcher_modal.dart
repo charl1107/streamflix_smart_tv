@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/vidnest_service.dart';
 import '../services/embed_service.dart';
+import '../config/tv_layout.dart';
 
 class TvServerSwitcherModal extends StatefulWidget {
   final String activeServerId;
@@ -73,12 +74,17 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
     return Container(
       color: Colors.black.withValues(alpha: 0.82),
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 36),
+      padding: EdgeInsets.symmetric(
+        horizontal: TvLayout.horizontalInset(context),
+        vertical: TvLayout.sectionGap(context) * 2,
+      ),
       child: FocusScope(
         onKeyEvent: _handleKeyEvent,
         child: Container(
-          width: 820,
-          padding: const EdgeInsets.all(28),
+          width: (MediaQuery.sizeOf(context).width * 0.62)
+              .clamp(760.0, 1120.0)
+              .toDouble(),
+          padding: EdgeInsets.all(TvLayout.sectionGap(context) * 1.75),
           decoration: BoxDecoration(
             color: const Color(0xFF141722),
             borderRadius: BorderRadius.circular(20),

@@ -57,7 +57,7 @@ export function buildVidnestUrl({
   if (!["movie", "tv", "anime"].includes(cleanType)) {
     throw new Error("type must be movie, tv, or anime");
   }
-  const cleanId = positiveInteger(id, cleanType === "anime" ? "AniList ID" : "TMDB ID");
+  const cleanId = positiveInteger(id, cleanType === "anime" ? "anime ID" : "TMDB ID");
   const cleanSeason = positiveInteger(season, "season");
   const cleanEpisode = positiveInteger(episode, "episode");
   const cleanStartAt = optionalSeconds(startAt);

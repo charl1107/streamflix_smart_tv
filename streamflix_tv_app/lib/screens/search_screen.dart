@@ -4,6 +4,7 @@ import 'package:streamflix_tv/providers/search_provider.dart';
 import 'package:streamflix_tv/widgets/media_card.dart';
 import 'package:streamflix_tv/widgets/loading_shimmer.dart';
 import 'package:streamflix_tv/models/media_item.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -51,11 +52,14 @@ class _SearchScreenState extends State<SearchScreen> {
           // Spacing for top floating nav bar
           const SizedBox(height: 80),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 16.0),
+            padding: EdgeInsets.symmetric(
+              horizontal: TvLayout.horizontalInset(context),
+              vertical: TvLayout.sectionGap(context),
+            ),
             child: TextField(
               controller: _searchController,
               focusNode: _searchFocusNode,
-              autofocus: true,
+              autofocus: false,
               onChanged: _onSearchChanged,
               onSubmitted: _onSearchSubmitted,
               style: const TextStyle(color: Colors.white, fontSize: 17),
@@ -103,12 +107,15 @@ class _SearchScreenState extends State<SearchScreen> {
                         ),
                       )
                     : GridView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 16.0),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 5,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: TvLayout.horizontalInset(context),
+                          vertical: TvLayout.sectionGap(context),
+                        ),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: TvLayout.gridColumns(context),
                           childAspectRatio: 2 / 3,
-                          crossAxisSpacing: 20,
-                          mainAxisSpacing: 20,
+                          crossAxisSpacing: TvLayout.sectionGap(context),
+                          mainAxisSpacing: TvLayout.sectionGap(context),
                         ),
                         itemCount: searchProvider.searchResults.length,
                         itemBuilder: (context, index) {

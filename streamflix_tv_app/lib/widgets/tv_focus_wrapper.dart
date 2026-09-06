@@ -6,6 +6,7 @@ class TvFocusWrapper extends StatefulWidget {
   final VoidCallback onTap;
   final bool autofocus;
   final BorderRadius? borderRadius;
+  final ValueChanged<bool>? onFocusChange;
 
   const TvFocusWrapper({
     super.key,
@@ -13,6 +14,7 @@ class TvFocusWrapper extends StatefulWidget {
     required this.onTap,
     this.autofocus = false,
     this.borderRadius,
+    this.onFocusChange,
   });
 
   @override
@@ -41,6 +43,19 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
     setState(() {
       _isFocused = _focusNode.hasFocus;
     });
+    widget.onFocusChange?.call(_isFocused);
+    if (_isFocused) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Scrollable.ensureVisible(
+            context,
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtEnd,
+          );
+        }
+      });
+    }
   }
 
   @override
@@ -65,7 +80,7 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedScale(
-          scale: _isFocused ? 1.05 : 1.0,
+          scale: _isFocused ? 1.04 : 1.0,
           duration: const Duration(milliseconds: 180),
           curve: Curves.easeOutCubic,
           child: AnimatedContainer(

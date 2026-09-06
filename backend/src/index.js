@@ -86,6 +86,7 @@ app.use("/api/*", async (c, next) => {
     "/api/anime/popular",
     "/api/anime/recent",
     "/api/anime/search",
+    "/api/anime/image",
     "/api/player",
     "/api/streams",
     "/api/subtitles",
@@ -104,6 +105,7 @@ app.use("/api/*", async (c, next) => {
     path.startsWith("/api/anime/popular") ||
     path.startsWith("/api/anime/recent") ||
     path.startsWith("/api/anime/search") ||
+    path.startsWith("/api/anime/image") ||
     path === "/api/player" ||
     path === "/api/streams" ||
     path === "/api/subtitles" ||

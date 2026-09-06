@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class BaseShimmer extends StatelessWidget {
   final Widget child;
@@ -49,8 +50,11 @@ class ShimmerRail extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 5,
-      separatorBuilder: (context, index) => const SizedBox(width: 12),
-      itemBuilder: (context, index) => const ShimmerCard(),
+      separatorBuilder: (context, index) => SizedBox(width: TvLayout.sectionGap(context)),
+      itemBuilder: (context, index) => ShimmerCard(
+        width: TvLayout.posterWidth(context),
+        height: TvLayout.posterHeight(context),
+      ),
     );
   }
 }
@@ -63,7 +67,7 @@ class ShimmerHero extends StatelessWidget {
     return BaseShimmer(
       child: Container(
         width: double.infinity,
-        height: 300,
+        height: TvLayout.heroHeight(context),
         color: Colors.black,
       ),
     );
@@ -79,12 +83,12 @@ class ShimmerGrid extends StatelessWidget {
       child: GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(24.0),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 5,
+        padding: EdgeInsets.all(TvLayout.horizontalInset(context)),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: TvLayout.gridColumns(context),
           childAspectRatio: 2/3,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
+          crossAxisSpacing: TvLayout.sectionGap(context),
+          mainAxisSpacing: TvLayout.sectionGap(context),
         ),
         itemCount: 10,
         itemBuilder: (context, index) {

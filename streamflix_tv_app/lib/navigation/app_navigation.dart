@@ -5,6 +5,7 @@ import 'package:streamflix_tv/screens/shows_screen.dart';
 import 'package:streamflix_tv/screens/anime_screen.dart';
 import 'package:streamflix_tv/screens/search_screen.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class AppNavigation extends StatefulWidget {
   const AppNavigation({super.key});
@@ -52,7 +53,12 @@ class _AppNavigationState extends State<AppNavigation> {
             left: 0,
             right: 0,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 16),
+              padding: EdgeInsets.fromLTRB(
+                TvLayout.horizontalInset(context),
+                TvLayout.headerTopInset(context),
+                TvLayout.horizontalInset(context),
+                TvLayout.headerTopInset(context) + 4,
+              ),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -121,7 +127,7 @@ class _AppNavigationState extends State<AppNavigation> {
                     ],
                   ),
 
-                  const SizedBox(width: 48),
+                  SizedBox(width: TvLayout.sectionGap(context) * 2),
 
                   // Navigation Tabs (Pill style matching streamflix-cf)
                   Expanded(
@@ -205,4 +211,3 @@ class _NavDestination {
 
   const _NavDestination({required this.title, required this.icon});
 }
-

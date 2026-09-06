@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:streamflix_tv/models/genre.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class GenreChips extends StatelessWidget {
   final List<Genre> genres;
@@ -21,7 +22,10 @@ class GenreChips extends StatelessWidget {
     return SizedBox(
       height: 60,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 8.0),
+        padding: EdgeInsets.symmetric(
+          horizontal: TvLayout.horizontalInset(context),
+          vertical: 8.0,
+        ),
         scrollDirection: Axis.horizontal,
         itemCount: genres.length + 1, // +1 for "All"
         itemBuilder: (context, index) {

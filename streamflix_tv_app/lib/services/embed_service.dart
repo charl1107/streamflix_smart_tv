@@ -76,7 +76,7 @@ class EmbedService {
   }) {
     if (useDirectVidnest) {
       return VidnestService.buildAnimeUrl(
-        anilistId: id,
+        animeId: id,
         episode: episode,
         server: server,
         startAt: startAt,

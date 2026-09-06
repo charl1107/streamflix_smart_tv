@@ -10,6 +10,7 @@ import '../services/embed_service.dart';
 import '../widgets/tv_focus_wrapper.dart';
 import '../widgets/tv_server_switcher_modal.dart';
 import '../widgets/web_iframe.dart';
+import '../config/tv_layout.dart';
 
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
@@ -559,9 +560,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
                 Positioned(
                 // Keep controls clear of the browser/app chrome and the
                 // embedded player's top-edge gesture area.
-                top: 88,
-                left: 24,
-                right: 24,
+                top: TvLayout.headerTopInset(context) + 24,
+                left: TvLayout.horizontalInset(context),
+                right: TvLayout.horizontalInset(context),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -621,7 +622,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             const Icon(Icons.dns, color: Colors.white, size: 18),
                             const SizedBox(width: 8),
                             Text(
-                              'Server: ${VidnestService.findServer(_activeServerId).name} (▲)',
+                              'Server: ${VidnestService.findServer(_activeServerId).name} (Up)',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 14,

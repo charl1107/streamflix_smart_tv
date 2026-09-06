@@ -3,15 +3,18 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:streamflix_tv/config/api_config.dart';
 import 'package:streamflix_tv/models/season_episode.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
+import 'package:streamflix_tv/config/tv_layout.dart';
 
 class EpisodeGrid extends StatelessWidget {
   final List<dynamic> episodes;
   final Function(int) onEpisodeTap;
+  final String? fallbackStillPath;
 
   const EpisodeGrid({
     super.key,
     required this.episodes,
     required this.onEpisodeTap,
+    this.fallbackStillPath,
   });
 
   @override
@@ -28,12 +31,12 @@ class EpisodeGrid extends StatelessWidget {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.all(24.0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+      padding: EdgeInsets.all(TvLayout.horizontalInset(context) / 2),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: TvLayout.gridColumns(context).clamp(4, 6),
         childAspectRatio: 16 / 12,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
+        crossAxisSpacing: TvLayout.sectionGap(context),
+        mainAxisSpacing: TvLayout.sectionGap(context),
       ),
       itemCount: episodes.length,
       itemBuilder: (context, index) {
@@ -52,6 +55,9 @@ class EpisodeGrid extends StatelessWidget {
           stillPath = ep['still_path'] ?? ep['image'] ?? ep['stillPath'];
         }
 
+        final hasEpisodeStill = stillPath != null && stillPath.isNotEmpty;
+        final imagePath = hasEpisodeStill ? stillPath : fallbackStillPath;
+
         return TvFocusWrapper(
           onTap: () => onEpisodeTap(episodeNumber),
           child: Container(
@@ -65,9 +71,14 @@ class EpisodeGrid extends StatelessWidget {
               children: [
                 Expanded(
                   flex: 3,
-                  child: stillPath != null && stillPath.isNotEmpty
+                  child: imagePath != null && imagePath.isNotEmpty
                       ? CachedNetworkImage(
-                          imageUrl: ApiConfig.posterUrl(stillPath),
+                          // Anime catalogues commonly do not expose individual
+                          // episode stills. In that case, reuse the series
+                          // backdrop rather than rendering an empty placeholder.
+                          imageUrl: hasEpisodeStill
+                              ? ApiConfig.posterUrl(imagePath)
+                              : ApiConfig.backdropUrl(imagePath),
                           fit: BoxFit.cover,
                           errorWidget: (context, url, error) => Container(
                             color: Colors.grey[800],
