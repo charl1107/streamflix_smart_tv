@@ -155,7 +155,10 @@ class AdBlocker {
               'googletagmanager.com', 'google-analytics.com', 'segment.io', 'doubleclick.net',
               'mixpanel.com', 'amplitude.com', 'hotjar.com', 'sentry.io', 'intercom.io', 'facebook.net'
             ].some(domain => hrefLower.includes(domain));
-            if (targetAttr === '_blank' || isTrackerLink || (href.startsWith('http') && !href.includes('vidnest.fun'))) {
+            const isAdLander = [
+              'popads', 'popcash', 'propeller', 'adsterra', 'exoclick', 'juicyads', 'monetag', 'betweendigital'
+            ].some(domain => hrefLower.includes(domain));
+            if (isTrackerLink || isAdLander || (targetAttr === '_blank' && !href.includes('vidnest.fun'))) {
               e.preventDefault();
               e.stopPropagation();
               console.log('[AdBlock JS] Blocked clickjack navigation to: ' + href);
@@ -166,25 +169,29 @@ class AdBlocker {
         }
       }, true);
 
-      // 3. Clean up existing ad overlays, tracker scripts, and deceptive transparency divs
+      // 3. Clean up verified ad overlays and ad iframes only
       function cleanAdOverlays() {
+        const adIframeSelectors = [
+          'iframe[src*="doubleclick"]', 'iframe[src*="popads"]', 'iframe[src*="popcash"]',
+          'iframe[src*="propeller"]', 'iframe[src*="adsterra"]', 'iframe[src*="exoclick"]',
+          'iframe[src*="juicyads"]', 'iframe[src*="monetag"]'
+        ];
+        adIframeSelectors.forEach(selector => {
+          try {
+            document.querySelectorAll(selector).forEach(el => el.remove());
+          } catch(e) {}
+        });
+
         const adSelectors = [
           '.adsbygoogle', '.banner-ad', '.popunder',
           'div[id*="ad-"]', 'div[class*="ad-"]',
-          'div[id*="player-ad-overlay"]',
-          'iframe[src*="doubleclick"]', 'iframe[src*="popads"]', 'iframe[src*="popcash"]',
-          'iframe[src*="propeller"]', 'iframe[src*="adsterra"]', 'iframe[src*="exoclick"]',
-          'iframe[src*="juicyads"]', 'iframe[src*="monetag"]',
-          'div[style*="z-index: 99999"]',
-          'div[style*="z-index: 2147483647"]'
+          '#player-ad-overlay'
         ];
-        
         adSelectors.forEach(selector => {
           try {
             document.querySelectorAll(selector).forEach(el => {
-              // Never remove the main video player or trusted streaming iframes
-              const src = (el.getAttribute('src') || '').toLowerCase();
-              if (src.includes('vidnest') || src.includes('wyzie') || src.includes('vdrk') || src.includes('workers.dev')) {
+              const text = (el.className || '') + ' ' + (el.id || '');
+              if (text.toLowerCase().includes('vidnest') || text.toLowerCase().includes('player') || text.toLowerCase().includes('control') || text.toLowerCase().includes('menu')) {
                 return;
               }
               if (!el.querySelector('video')) {

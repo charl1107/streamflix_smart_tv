@@ -68,6 +68,21 @@ void main() {
       expect(anime, 'https://vidnest.fun/anime/21/5/sub?server=gama&startAt=30');
     });
 
+    test('EmbedService routes through backend player proxy when useDirectVidnest is false', () {
+      EmbedService.useDirectVidnest = false;
+      final movie = EmbedService.getMovieUrl(550, server: 'sigma', startAt: 60);
+      expect(movie, contains('/player?type=movie&id=550&server=sigma&startAt=60'));
+
+      final tv = EmbedService.getTvUrl(1399, 2, 4, server: 'gama', startAt: 120);
+      expect(tv, contains('/player?type=tv&id=1399&s=2&e=4&server=gama&startAt=120'));
+
+      final anime = EmbedService.getAnimeUrl(99, 1, 3, server: 'lamda');
+      expect(anime, contains('/player?type=anime&id=99&s=1&e=3&server=lamda'));
+
+      // Restore
+      EmbedService.useDirectVidnest = true;
+    });
+
     test('EmbedService provides Vidnest as the exclusive official provider', () {
       expect(EmbedService.providers.length, 1);
       final provider = EmbedService.providers.first;

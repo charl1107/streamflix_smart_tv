@@ -43,7 +43,7 @@ class _DetailScreenState extends State<DetailScreen> {
     setState(() => _isLoading = true);
     
     try {
-      if (_mediaItem.mediaType == 'tv') {
+      if (_mediaItem.playbackType == 'tv') {
         final tvId = int.tryParse(_mediaItem.id.toString()) ?? 0;
         _fullDetails = await _tmdbService.getTvDetails(tvId);
         _totalSeasons = _fullDetails?.numberOfSeasons ?? _fullDetails?.seasons.length ?? 1;
@@ -51,6 +51,12 @@ class _DetailScreenState extends State<DetailScreen> {
         _cast = _fullDetails?.cast ?? [];
         _recommendations = _fullDetails?.recommendations ?? [];
         await _loadTvSeason(_selectedSeason);
+      } else if (_mediaItem.playbackType == 'anime') {
+        final anikotoId = _mediaItem.id.toString();
+        _fullDetails = await _tmdbService.getAnimeDetails(anikotoId);
+        _cast = _fullDetails?.cast ?? [];
+        _recommendations = _fullDetails?.recommendations ?? [];
+        _episodes = await _tmdbService.getAnimeEpisodes(anikotoId);
       } else {
         final movieId = int.tryParse(_mediaItem.id.toString()) ?? 0;
         _fullDetails = await _tmdbService.getMovieDetails(movieId);
@@ -90,26 +96,39 @@ class _DetailScreenState extends State<DetailScreen> {
     );
   }
 
-  void _onPlayPressed() {
-    final isAnime = _mediaItem.mediaType == 'anime';
-    final embedUrl = isAnime
-        ? EmbedService.getAnimeUrl(_mediaItem.id, 1, 1)
+  Future<void> _onPlayPressed() async {
+    if (_mediaItem.playbackType == 'anime') {
+      await _onEpisodeTap(1);
+      return;
+    }
+    final embedUrl = _mediaItem.playbackType == 'tv'
+        ? EmbedService.getTvUrl(_mediaItem.id, 1, 1)
         : EmbedService.getMovieUrl(_mediaItem.id);
     _openPlayerUrl(embedUrl, title: _mediaItem.title);
   }
 
-  void _onEpisodeTap(int episodeNumber) {
-    final isAnime = _mediaItem.mediaType == 'anime';
-    final embedUrl = isAnime
-        ? EmbedService.getAnimeUrl(_mediaItem.id, _selectedSeason, episodeNumber)
-        : EmbedService.getTvUrl(_mediaItem.id, _selectedSeason, episodeNumber);
+  Future<void> _onEpisodeTap(int episodeNumber) async {
+    try {
+      final embedUrl = _mediaItem.playbackType == 'anime'
+          ? await _tmdbService.getAnimeEmbedUrl(_mediaItem.id.toString(), episodeNumber)
+          : EmbedService.getTvUrl(
+              _mediaItem.id,
+              _selectedSeason,
+              episodeNumber,
+            );
 
-    _openPlayerUrl(
-      embedUrl,
-      title: '${_mediaItem.title} - S$_selectedSeason Ep $episodeNumber',
-      season: _selectedSeason,
-      episode: episodeNumber,
-    );
+      _openPlayerUrl(
+        embedUrl,
+        title: '${_mediaItem.title} - ${_mediaItem.playbackType == 'anime' ? 'Episode' : 'S$_selectedSeason Ep'} $episodeNumber',
+        season: _selectedSeason,
+        episode: episodeNumber,
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Unable to open this episode: $error')),
+      );
+    }
   }
 
   @override
@@ -238,7 +257,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                     style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.4),
                                   ),
                                   const SizedBox(height: 24),
-                                  if (item.mediaType == 'movie')
+                                  if (item.mediaType != 'tv')
                                     TvFocusWrapper(
                                       onTap: _onPlayPressed,
                                       autofocus: true,
@@ -256,13 +275,15 @@ class _DetailScreenState extends State<DetailScreen> {
                                             ),
                                           ],
                                         ),
-                                        child: const Row(
+                                        child: Row(
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
                                             SizedBox(width: 8),
                                             Text(
-                                              'Play Movie',
+                                              item.mediaType == 'anime'
+                                                  ? 'Play Anime'
+                                                  : 'Play Movie',
                                               style: TextStyle(
                                                 color: Colors.white,
                                                 fontSize: 17,
@@ -299,8 +320,9 @@ class _DetailScreenState extends State<DetailScreen> {
                 ),
                 
                 // TV Shows Episodes Section
-                if (item.mediaType == 'tv') ...[
-                  if (_totalSeasons > 1)
+                if (_mediaItem.playbackType == 'tv' ||
+                    _mediaItem.playbackType == 'anime') ...[
+                  if (_mediaItem.playbackType == 'tv' && _totalSeasons > 1)
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 48.0, vertical: 16.0),
                       child: DropdownButton<int>(

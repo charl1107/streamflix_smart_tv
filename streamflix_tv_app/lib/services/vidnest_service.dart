@@ -1,4 +1,4 @@
-﻿/// Server definition for Vidnest streaming
+/// Server definition for Vidnest streaming
 class VidnestServer {
   final String id;
   final String name;
@@ -13,10 +13,12 @@ class VidnestServer {
   });
 }
 
+/// Official Vidnest Embed API Service
+/// Exclusively handles Vidnest embeds for Movies, TV Shows, Anime, and AnimePahe
 class VidnestService {
   static const String baseUrl = 'https://vidnest.fun';
 
-  /// Supported Vidnest servers
+  /// Supported Vidnest servers as per API documentation
   static const List<VidnestServer> servers = [
     VidnestServer(id: 'lamda', name: 'Lamda', description: 'Primary High-Speed CDN', badge: 'Fast'),
     VidnestServer(id: 'primesrc', name: 'PrimeSrc', description: 'Multi-Bitrate Stream', badge: '1080p'),
@@ -31,64 +33,100 @@ class VidnestService {
 
   static VidnestServer defaultServer = servers[0];
 
-  /// Builds a Vidnest embed URL for movies
+  /// Builds a Vidnest embed URL for movies:
+  /// https://vidnest.fun/movie/[TMDB_ID]
   static String buildMovieUrl({
     required dynamic tmdbId,
     String? server,
     int startAt = 0,
-    bool hideBuiltinControls = false,
+    Map<String, dynamic>? hideControls,
   }) {
     final serverParam = server ?? defaultServer.id;
-    final buffer = StringBuffer('$baseUrl/movie/$tmdbId?server=$serverParam');
+    final queryParams = <String>['server=$serverParam'];
     if (startAt > 0) {
-      buffer.write('&startAt=$startAt');
+      queryParams.add('startAt=$startAt');
     }
-    if (hideBuiltinControls) {
-      buffer.write('&servericon=hide');
+    if (hideControls != null) {
+      hideControls.forEach((key, value) {
+        queryParams.add('$key=$value');
+      });
     }
-    return buffer.toString();
+    return '$baseUrl/movie/$tmdbId?${queryParams.join('&')}';
   }
 
-  /// Builds a Vidnest embed URL for TV shows
+  /// Builds a Vidnest embed URL for TV shows:
+  /// https://vidnest.fun/tv/[TMDB_ID]/[SEASON]/[EPISODE]
   static String buildTvUrl({
     required dynamic tmdbId,
     required int season,
     required int episode,
     String? server,
     int startAt = 0,
-    bool hideBuiltinControls = false,
+    Map<String, dynamic>? hideControls,
   }) {
     final serverParam = server ?? defaultServer.id;
-    final buffer = StringBuffer('$baseUrl/tv/$tmdbId/$season/$episode?server=$serverParam');
+    final queryParams = <String>['server=$serverParam'];
     if (startAt > 0) {
-      buffer.write('&startAt=$startAt');
+      queryParams.add('startAt=$startAt');
     }
-    if (hideBuiltinControls) {
-      buffer.write('&servericon=hide');
+    if (hideControls != null) {
+      hideControls.forEach((key, value) {
+        queryParams.add('$key=$value');
+      });
     }
-    return buffer.toString();
+    return '$baseUrl/tv/$tmdbId/$season/$episode?${queryParams.join('&')}';
   }
 
-  /// Builds a Vidnest embed URL for Anime
+  /// Builds a Vidnest embed URL for Anime:
+  /// https://vidnest.fun/anime/[ANILIST_ID]/[EPISODE]/[SUB_OR_DUB]
   static String buildAnimeUrl({
     required dynamic anilistId,
     required int episode,
     String subOrDub = 'sub',
     String? server,
     int startAt = 0,
+    Map<String, dynamic>? hideControls,
   }) {
-    final buffer = StringBuffer('$baseUrl/anime/$anilistId/$episode/$subOrDub');
-    final queryParams = <String>[];
-    if (server != null && server.isNotEmpty) {
-      queryParams.add('server=$server');
-    }
+    final serverParam = server ?? defaultServer.id;
+    final queryParams = <String>['server=$serverParam'];
     if (startAt > 0) {
       queryParams.add('startAt=$startAt');
     }
-    if (queryParams.isNotEmpty) {
-      buffer.write('?${queryParams.join('&')}');
+    if (hideControls != null) {
+      hideControls.forEach((key, value) {
+        queryParams.add('$key=$value');
+      });
     }
-    return buffer.toString();
+    return '$baseUrl/anime/$anilistId/$episode/$subOrDub?${queryParams.join('&')}';
+  }
+
+  /// Builds a Vidnest embed URL for AnimePahe:
+  /// https://vidnest.fun/animepahe/[ANILIST_ID]/[EPISODE]/[SUB_OR_DUB]
+  static String buildAnimePaheUrl({
+    required dynamic anilistId,
+    required int episode,
+    String subOrDub = 'sub',
+    String? server,
+    int startAt = 0,
+    Map<String, dynamic>? hideControls,
+  }) {
+    final serverParam = server ?? defaultServer.id;
+    final queryParams = <String>['server=$serverParam'];
+    if (startAt > 0) {
+      queryParams.add('startAt=$startAt');
+    }
+    if (hideControls != null) {
+      hideControls.forEach((key, value) {
+        queryParams.add('$key=$value');
+      });
+    }
+    return '$baseUrl/animepahe/$anilistId/$episode/$subOrDub?${queryParams.join('&')}';
+  }
+
+  /// Generates the standard HTML <iframe> code snippet per documentation:
+  /// <iframe src="..." frameBorder="0" scrolling="no" allowFullScreen></iframe>
+  static String buildIframeCode(String embedUrl) {
+    return '<iframe src="$embedUrl" frameBorder="0" scrolling="no" allowFullScreen></iframe>';
   }
 
   /// Finds a server by its id

@@ -40,6 +40,18 @@ class _PlayerScreenState extends State<PlayerScreen> {
   String? _hudBadgeText;
   IconData? _hudBadgeIcon;
   Timer? _hudTimer;
+  Timer? _loadingTimeoutTimer;
+
+  void _startLoadingSafetyTimeout() {
+    _loadingTimeoutTimer?.cancel();
+    _loadingTimeoutTimer = Timer(const Duration(milliseconds: 2500), () {
+      if (mounted && _isLoading) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    });
+  }
 
   @override
   void didChangeDependencies() {
@@ -67,6 +79,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
         } else {
           _isLoading = false;
         }
+        _startLoadingSafetyTimeout();
+        _initialized = true;
+
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _tvInputFocusNode.requestFocus();
+        });
+      } else {
+        _embedUrl = 'https://vidnest.fun/movie/324857';
+        if (!kIsWeb) {
+          _initWebView();
+        } else {
+          _isLoading = false;
+        }
+        _startLoadingSafetyTimeout();
         _initialized = true;
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -78,6 +104,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    _loadingTimeoutTimer?.cancel();
     _hudTimer?.cancel();
     _tvInputFocusNode.dispose();
     super.dispose();
@@ -138,6 +165,9 @@ class _PlayerScreenState extends State<PlayerScreen> {
         NavigationDelegate(
           onWebResourceError: (WebResourceError error) {
             debugPrint('[WebView Resource Error] ${error.description} for ${error.url}');
+            if (mounted && _isLoading && (error.isForMainFrame ?? true)) {
+              _showHudBadge('Stream error. Press ▲ to switch server', Icons.warning_amber_rounded);
+            }
           },
           onNavigationRequest: (NavigationRequest request) {
             final isAllowed = AdBlocker.shouldAllowNavigation(_embedUrl, request.url);
@@ -171,7 +201,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
           },
         ),
       )
-      ..loadRequest(Uri.parse(_embedUrl));
+      ..loadRequest(
+        Uri.parse(_embedUrl),
+        headers: const {'Referer': 'https://vidnest.fun/'},
+      );
   }
 
   void _showHudBadge(String text, IconData icon) {
@@ -355,11 +388,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _isLoading = true;
       _embedUrl = newUrl;
     });
+    _startLoadingSafetyTimeout();
 
     _showHudBadge('Switched to ${provider.name}', Icons.cloud_sync);
 
     if (!kIsWeb) {
-      await _controller.loadRequest(Uri.parse(_embedUrl));
+      await _controller.loadRequest(
+        Uri.parse(_embedUrl),
+        headers: const {'Referer': 'https://vidnest.fun/'},
+      );
     } else {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -386,11 +423,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
       _isLoading = true;
       _embedUrl = newUrl;
     });
+    _startLoadingSafetyTimeout();
 
     _showHudBadge('Switched to ${server.name} (${_formatDuration(_lastPlaybackSeconds)})', Icons.dns);
 
     if (!kIsWeb) {
-      await _controller.loadRequest(Uri.parse(_embedUrl));
+      await _controller.loadRequest(
+        Uri.parse(_embedUrl),
+        headers: const {'Referer': 'https://vidnest.fun/'},
+      );
     } else {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -478,39 +519,47 @@ class _PlayerScreenState extends State<PlayerScreen> {
             children: [
               // 1. Embedded Video Player (Native Android WebView or Web IFrame)
               if (_embedUrl.isNotEmpty)
-                if (kIsWeb)
-                  buildPlatformEmbedView(
-                    embedUrl: _embedUrl,
-                    title: _title,
-                    onLoaded: () {
-                      if (mounted) setState(() => _isLoading = false);
-                    },
-                  )
-                else
-                  WebViewWidget(controller: _controller),
+                Positioned.fill(
+                  child: kIsWeb
+                      ? buildPlatformEmbedView(
+                          embedUrl: _embedUrl,
+                          title: _title,
+                          onLoaded: () {
+                            if (mounted) setState(() => _isLoading = false);
+                          },
+                        )
+                      : WebViewWidget(controller: _controller),
+                ),
 
               // 2. Loading Indicator
               if (_isLoading)
-                Container(
-                  color: Colors.black54,
-                  child: const Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        CircularProgressIndicator(color: Colors.blueAccent),
-                        SizedBox(height: 16),
-                        Text(
-                          'Connecting to Vidnest Stream...',
-                          style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      color: Colors.black87,
+                      child: const Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            CircularProgressIndicator(color: Colors.blueAccent),
+                            SizedBox(height: 16),
+                            Text(
+                              'Connecting to Vidnest Stream...',
+                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ),
                 ),
 
               // 3. Top Navigation & Info Bar
-              Positioned(
-                top: 24,
+              if (!kIsWeb)
+                Positioned(
+                // Keep controls clear of the browser/app chrome and the
+                // embedded player's top-edge gesture area.
+                top: 88,
                 left: 24,
                 right: 24,
                 child: Row(
@@ -521,7 +570,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         TvFocusWrapper(
                           onTap: () => Navigator.pop(context),
                           child: Container(
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
                               color: Colors.black54,
                               borderRadius: BorderRadius.circular(24),

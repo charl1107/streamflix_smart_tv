@@ -62,22 +62,51 @@ class TmdbService {
 
   // Anime fetchers (Animation genre 16 from TV / Awit)
   Future<List<MediaItem>> getAnimeTrending() async {
-    final data = await _api.get('/discover', queryParameters: {
-      'type': 'tv',
-      'genre': 16,
-      'sort_by': 'popularity.desc',
-    });
+    final data = await _api.get('/anime/trending');
     final results = data['results'] as List<dynamic>? ?? [];
-    return results.map((json) => MediaItem.fromTmdbJson(Map<String, dynamic>.from(json), defaultMediaType: 'anime')).toList();
+    return results
+        .map((json) => MediaItem.fromTmdbJson(
+              Map<String, dynamic>.from(json),
+              defaultMediaType: 'anime',
+              playbackType: 'anime',
+            ))
+        .toList();
   }
 
   Future<List<MediaItem>> getAnimePopular() async {
-    final data = await _api.get('/discover', queryParameters: {
-      'type': 'movie',
-      'genre': 16,
-      'sort_by': 'vote_average.desc',
-    });
+    final data = await _api.get('/anime/popular');
     final results = data['results'] as List<dynamic>? ?? [];
-    return results.map((json) => MediaItem.fromTmdbJson(Map<String, dynamic>.from(json), defaultMediaType: 'anime')).toList();
+    return results
+        .map((json) => MediaItem.fromTmdbJson(
+              Map<String, dynamic>.from(json),
+              defaultMediaType: 'anime',
+              playbackType: 'anime',
+            ))
+        .toList();
+  }
+
+  Future<MediaItem> getAnimeDetails(String anikotoId) async {
+    final data = await _api.get('/anime/info/$anikotoId');
+    return MediaItem.fromTmdbJson(
+      Map<String, dynamic>.from(data),
+      defaultMediaType: 'anime',
+      playbackType: 'anime',
+    );
+  }
+
+  Future<List<dynamic>> getAnimeEpisodes(String anikotoId) async {
+    final data = await _api.get('/anime/episodes/$anikotoId');
+    return data['episodes'] as List<dynamic>? ?? [];
+  }
+
+  Future<String> getAnimeEmbedUrl(String anikotoId, int episode, {String audio = 'sub'}) async {
+    final data = await _api.get('/anime/watch', queryParameters: {
+      'id': anikotoId,
+      'episode': episode,
+      'audio': audio,
+    });
+    final url = data['embedUrl'] as String?;
+    if (url == null || url.isEmpty) throw StateError('Anime episode embed is unavailable');
+    return url;
   }
 }

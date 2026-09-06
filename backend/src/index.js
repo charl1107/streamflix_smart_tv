@@ -33,7 +33,11 @@ app.use("*", cors({
 app.use("*", async (c, next) => {
   await next();
   if (c.req.method === "GET" && c.res.ok && !c.res.headers.get("Cache-Control")) {
-    c.header("Cache-Control", "public, max-age=300, s-maxage=300");
+    if (c.req.path.startsWith("/api/player")) {
+      c.header("Cache-Control", "no-store, no-cache, must-revalidate");
+    } else {
+      c.header("Cache-Control", "public, max-age=300, s-maxage=300");
+    }
   }
 });
 

@@ -18,6 +18,10 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <!-- Experimental popup protection. It deliberately omits allow-popups.
+       Remove it if an embed provider rejects playback. A production host
+       should send the same policy as an HTTP CSP header. -->
+  <meta http-equiv="Content-Security-Policy" content="sandbox allow-scripts allow-same-origin allow-forms allow-presentation">
   <meta name="description" content="Cineko — Your Open Cinema: Stream movies, TV shows, and anime with Vidnest embeds and D-Pad TV controls.">
 
   <!-- iOS meta tags & icons -->

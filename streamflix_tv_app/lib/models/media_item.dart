@@ -7,6 +7,10 @@ class MediaItem {
   final double rating;
   final int? year;
   final String mediaType;
+  /// The identifier family used by the playback provider.  The Anime screen is
+  /// a catalogue category, not an identifier family: its TMDB results must use
+  /// Vidnest's movie or TV endpoints rather than its AniList-only anime route.
+  final String playbackType;
   final List<int> genreIds;
   final List<String> genreNames;
   final int? runtime;
@@ -27,6 +31,7 @@ class MediaItem {
     required this.rating,
     this.year,
     required this.mediaType,
+    String? playbackType,
     this.genreIds = const [],
     this.genreNames = const [],
     this.runtime,
@@ -37,7 +42,7 @@ class MediaItem {
     this.cast = const [],
     this.recommendations = const [],
     this.seasons = const [],
-  });
+  }) : playbackType = playbackType ?? mediaType;
 
   // Compatibility aliases
   String get name => title;
@@ -45,7 +50,11 @@ class MediaItem {
   String? get releaseDate => year?.toString();
   String? get firstAirDate => year?.toString();
 
-  factory MediaItem.fromTmdbJson(Map<String, dynamic> json, {String defaultMediaType = 'movie'}) {
+  factory MediaItem.fromTmdbJson(
+    Map<String, dynamic> json, {
+    String defaultMediaType = 'movie',
+    String? playbackType,
+  }) {
     final mediaType = json['media_type'] ?? defaultMediaType;
     final title = json['title'] ?? json['name'] ?? 'Unknown';
     final releaseDate = json['release_date'] ?? json['first_air_date'];
@@ -67,6 +76,7 @@ class MediaItem {
       rating: (json['vote_average'] ?? 0).toDouble(),
       year: year,
       mediaType: mediaType,
+      playbackType: playbackType ?? (mediaType == 'anime' ? 'tv' : mediaType),
       genreIds: List<int>.from(json['genre_ids'] ?? []),
       genreNames: (json['genres'] as List<dynamic>?)?.map((g) => g['name'].toString()).toList() ?? [],
       runtime: json['runtime'] ?? (json['episode_run_time'] is List && (json['episode_run_time'] as List).isNotEmpty ? json['episode_run_time'][0] : null),
@@ -88,6 +98,7 @@ class MediaItem {
     double? rating,
     int? year,
     String? mediaType,
+    String? playbackType,
     List<int>? genreIds,
     List<String>? genreNames,
     int? runtime,
@@ -108,6 +119,7 @@ class MediaItem {
       rating: rating ?? this.rating,
       year: year ?? this.year,
       mediaType: mediaType ?? this.mediaType,
+      playbackType: playbackType ?? this.playbackType,
       genreIds: genreIds ?? this.genreIds,
       genreNames: genreNames ?? this.genreNames,
       runtime: runtime ?? this.runtime,

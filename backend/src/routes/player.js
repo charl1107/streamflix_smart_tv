@@ -1,5 +1,6 @@
-﻿import { Hono } from "hono";
+import { Hono } from "hono";
 import { resolveAllStreams } from "../extensions/index.js";
+import { buildVidnestUrl } from "./embed.js";
 
 const app = new Hono();
 
@@ -47,22 +48,9 @@ function sanitizeEmbedUrl(rawUrl) {
   }
 }
 
-async function resolveSafeEmbedUrl(rawUrl, fallbackUrl) {
+function resolveSafeEmbedUrl(rawUrl, fallbackUrl) {
   const safeUrl = sanitizeEmbedUrl(rawUrl);
-  if (!safeUrl) return fallbackUrl;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000);
-    const response = await fetch(safeUrl, { method: "HEAD", signal: controller.signal, redirect: "follow" });
-    clearTimeout(timeout);
-    if (response.ok || response.status === 403 || response.status === 405) {
-      return safeUrl;
-    }
-    return fallbackUrl;
-  } catch {
-    return fallbackUrl;
-  }
+  return safeUrl || fallbackUrl;
 }
 
 // Supported Vidnest streaming servers
@@ -190,31 +178,37 @@ app.get("/extensions", (c) => {
 app.get("/player", async (c) => {
   const type = (c.req.query("type") || "movie").toLowerCase();
   const id = c.req.query("id") || "";
-  const season = Number(c.req.query("s") || c.req.query("season") || 1);
-  const episode = Number(c.req.query("e") || c.req.query("episode") || 1);
+  const season = c.req.query("s") || c.req.query("season") || "1";
+  const episode = c.req.query("e") || c.req.query("episode") || "1";
   const server = c.req.query("server") || "lamda";
-  const startAt = Number(c.req.query("startAt") || 0);
+  const startAt = c.req.query("startAt") || c.req.query("progress") || "0";
 
-  if (!id) {
+  if (!id || !["movie", "tv", "anime"].includes(type)) {
     return c.html("<html><body style='background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>Missing media ID</h2></body></html>", 400);
   }
 
   let embedUrl = "";
-  if (type === "tv") {
-    embedUrl = `https://vidnest.fun/tv/${id}/${season}/${episode}?server=${encodeURIComponent(server)}`;
-  } else if (type === "anime") {
-    embedUrl = `https://vidnest.fun/anime/${id}/${episode}/sub?server=${encodeURIComponent(server)}`;
-  } else {
-    embedUrl = `https://vidnest.fun/movie/${id}?server=${encodeURIComponent(server)}`;
-  }
-
-  if (startAt > 0) {
-    embedUrl += `&startAt=${startAt}`;
+  try {
+    embedUrl = buildVidnestUrl({
+      type,
+      id,
+      season,
+      episode,
+      subOrDub: c.req.query("sub") || c.req.query("subOrDub") || "sub",
+      server,
+      startAt,
+      isAnimePahe: c.req.query("pahe") === "true" || c.req.query("source") === "animepahe",
+    });
+  } catch (error) {
+    return c.html(`<html><body style='background:#000;color:#fff;display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;'><h2>${error.message}</h2></body></html>`, 400);
   }
 
   const fallbackUrl = "https://vidnest.fun/movie/324857?server=lamda";
   const safeEmbedUrl = sanitizeEmbedUrl(embedUrl);
-  const finalEmbedUrl = await resolveSafeEmbedUrl(safeEmbedUrl || embedUrl, fallbackUrl);
+  const finalEmbedUrl = resolveSafeEmbedUrl(safeEmbedUrl || embedUrl, fallbackUrl);
+  const embedParams = new URL(finalEmbedUrl).searchParams;
+  const activeServer = embedParams.get("server") || "lamda";
+  const playbackStartAt = Number(embedParams.get("startAt") || 0);
 
   const serversJson = JSON.stringify(VIDNEST_SERVERS);
 
@@ -271,6 +265,7 @@ app.get("/player", async (c) => {
       color: #fff;
       font-size: 16px;
       z-index: 10;
+      pointer-events: none;
       transition: opacity 0.3s;
     }
     .spinner {
@@ -402,11 +397,6 @@ app.get("/player", async (c) => {
   </style>
 </head>
 <body>
-  <div id="loading">
-    <div class="spinner"></div>
-    <div id="loading-text">Connecting to Vidnest Stream...</div>
-  </div>
-
   <button id="server-badge-btn" onclick="toggleServerModal()" tabindex="0">
     <span>📺 Switch Server (▲)</span>
   </button>
@@ -421,26 +411,22 @@ app.get("/player", async (c) => {
     </div>
   </div>
 
-  <!-- Sandboxed Vidnest Embed Iframe -->
+  <!-- Sandboxed Vidnest Embed Iframe (Official Vidnest Player) -->
   <iframe
     id="vidnest-iframe"
     src="${finalEmbedUrl}"
+    frameBorder="0"
+    scrolling="no"
     allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-    referrerpolicy="strict-origin-when-cross-origin"
+    referrerpolicy="origin"
     allowfullscreen>
   </iframe>
 
   <script>
     const iframe = document.getElementById('vidnest-iframe');
-    const loading = document.getElementById('loading');
     const servers = ${serversJson};
-    let currentServer = "${server}";
-    let currentSeconds = ${startAt};
-
-    iframe.onload = function() {
-      if (loading) loading.style.opacity = '0';
-      setTimeout(() => { if (loading) loading.style.display = 'none'; }, 300);
-    };
+    let currentServer = "${activeServer}";
+    let currentSeconds = ${playbackStartAt};
 
     // Listen to video progress events from iframe if dispatched
     window.addEventListener('message', function(e) {
@@ -490,11 +476,6 @@ app.get("/player", async (c) => {
     function switchServer(serverId) {
       currentServer = serverId;
       toggleServerModal();
-      if (loading) {
-        loading.style.display = 'flex';
-        loading.style.opacity = '1';
-        document.getElementById('loading-text').innerText = 'Switching to ' + serverId + '...';
-      }
 
       const mediaType = "${type}";
       const mediaId = "${id}";
@@ -544,6 +525,9 @@ app.get("/player", async (c) => {
 </html>`;
 
   c.header("Content-Type", "text/html; charset=utf-8");
+  c.header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+  c.header("Pragma", "no-cache");
+  c.header("Expires", "0");
   return c.html(html);
 });
 

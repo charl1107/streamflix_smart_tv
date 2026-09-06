@@ -43,7 +43,7 @@ class EmbedService {
         startAt: startAt,
       );
     }
-    return ApiConfig.movieEmbed(tmdbId);
+    return ApiConfig.movieEmbed(tmdbId, server: server, startAt: startAt);
   }
 
   static String getTvUrl(
@@ -63,7 +63,7 @@ class EmbedService {
         startAt: startAt,
       );
     }
-    return ApiConfig.tvEmbed(tmdbId, season, episode);
+    return ApiConfig.tvEmbed(tmdbId, season, episode, server: server, startAt: startAt);
   }
 
   static String getAnimeUrl(
@@ -82,6 +82,6 @@ class EmbedService {
         startAt: startAt,
       );
     }
-    return ApiConfig.animeEmbed(id, season, episode);
+    return ApiConfig.animeEmbed(id, season, episode, server: server, startAt: startAt);
   }
 }

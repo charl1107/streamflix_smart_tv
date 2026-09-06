@@ -1,186 +1,119 @@
-// Anime routes — powered by TMDB Animation
+// Anime catalogue and episode metadata from Anikoto, matching streamflix-cf.
+// Anikoto IDs are provider IDs, so playback is resolved server-side per episode.
 import { Hono } from "hono";
 
 const app = new Hono();
+const DEFAULT_ANIKOTO_URL = "https://anikotoapi.site";
+const DEFAULT_MEGAPLAY_URL = "https://megaplay.buzz";
 
-async function tmdb(env, path, queryParams = {}) {
-  const key = env.TMDB_API_KEY;
-  const base = env.TMDB_BASE_URL || "https://api.themoviedb.org/3";
-
-  if (!key || key.length < 4) {
-    throw new Error("TMDB_API_KEY is not configured");
-  }
-
-  const url = new URL(`${base}${path}`);
-  url.searchParams.set("api_key", key);
-
-  for (const [k, v] of Object.entries(queryParams)) {
-    if (v !== undefined && v !== null && v !== "") {
-      url.searchParams.set(k, String(v));
-    }
-  }
-
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-
-  try {
-    const res = await fetch(url.toString(), {
-      signal: controller.signal,
-      headers: { "Accept-Language": "en-US" },
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      throw new Error(`TMDB ${res.status}: ${text.slice(0, 200)}`);
-    }
-    return res.json();
-  } finally {
-    clearTimeout(timeout);
-  }
+function baseUrl(value, fallback) { return String(value || fallback).replace(/\/$/, ""); }
+function first(...values) { return values.find((value) => value !== undefined && value !== null && value !== ""); }
+function image(value) {
+  if (typeof value === "string") return value;
+  return value ? first(value.extraLarge, value.large, value.medium, value.url, value.src) || null : null;
+}
+function positiveInteger(value, name) {
+  if (!/^[1-9]\d*$/.test(String(value || ""))) throw new Error(`${name} must be a positive integer`);
+  return Number(value);
 }
 
-function normalizeTmdbAnime(data) {
-  const results = Array.isArray(data?.results) ? data.results : [];
+async function anikoto(env, path, query = {}) {
+  const url = new URL(`${baseUrl(env.ANIKOTO_API_URL, DEFAULT_ANIKOTO_URL)}${path}`);
+  Object.entries(query).forEach(([key, value]) => { if (value !== undefined && value !== null) url.searchParams.set(key, String(value)); });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(url, { headers: { Accept: "application/json" }, signal: controller.signal });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(`Anikoto ${response.status}`);
+    return payload;
+  } finally { clearTimeout(timeout); }
+}
+
+function normalizeAnime(raw) {
+  const titleObject = typeof raw?.title === "object" ? raw.title : null;
+  const title = first(titleObject?.english, titleObject?.romaji, raw?.name, raw?.title, raw?.anime_title, "Untitled");
+  const poster = image(first(raw?.poster, raw?.image, raw?.cover, raw?.thumbnail, raw?.coverImage));
   return {
-    results: results.map((item) => ({
-      id: item.id,
-      title: item.name || item.title || item.original_name || "Untitled",
-      image: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-      backdrop: item.backdrop_path ? `https://image.tmdb.org/t/p/w1280${item.backdrop_path}` : null,
-      overview: item.overview || null,
-      rating: Number((item.vote_average || 0).toFixed(1)),
-      year: (item.first_air_date || item.release_date || "2026").substring(0, 4),
-      type: "anime",
-      genre_ids: item.genre_ids || [],
-    })),
-    total_results: data?.total_results || results.length,
-    page: data?.page || 1,
-    total_pages: data?.total_pages || 1,
+    id: String(first(raw?.id, raw?.anime_id, raw?.animeId, raw?.series_id, raw?.slug, "")),
+    title,
+    poster_path: poster,
+    backdrop_path: image(first(raw?.banner, raw?.bannerImage, raw?.backdrop, raw?.poster_large)) || poster,
+    overview: first(raw?.overview, raw?.description, raw?.synopsis, raw?.plot, ""),
+    vote_average: Number(first(raw?.rating, raw?.score, raw?.averageScore, 0)) || 0,
+    first_air_date: first(raw?.year, raw?.release_year, raw?.seasonYear, null),
+    media_type: "anime",
+    playback_type: "anime_provider",
+    number_of_episodes: Number(first(raw?.episodes_count, raw?.episode_count, raw?.total_episodes, 0)) || null,
+    status: raw?.status || null,
+    genres: (raw?.genres || []).map((name) => typeof name === "string" ? { name } : name),
   };
 }
 
-// ── Trending ───────────────────────────────────────────
-app.get("/trending", async (c) => {
-  try {
-    const page = c.req.query("page") || "1";
-    const data = await tmdb(c.env, "/discover/tv", {
-      with_genres: "16",
-      with_original_language: "ja",
-      sort_by: "popularity.desc",
-      page,
-    });
-    return c.json(normalizeTmdbAnime(data));
-  } catch (err) {
-    console.error("[anime/trending]", err.message);
-    return c.json({ error: err.message, results: [] }, 500);
-  }
-});
+function listFrom(payload) { return Array.isArray(payload) ? payload : payload?.results || payload?.data || payload?.anime || []; }
+function episodeList(payload) { return payload?.episodes || payload?.data?.episodes || payload?.anime?.episodes || payload?.data?.anime?.episodes || []; }
+function normalizeEpisode(raw, animeId) {
+  const number = Number(first(raw?.number, raw?.episode, raw?.episode_number, raw?.ep, 0));
+  const embedId = first(raw?.episode_embed_id, raw?.embed_id, raw?.embedId, raw?.server_id, raw?.id);
+  return {
+    id: String(embedId || `${animeId}-${number}`), number,
+    title: first(raw?.title, raw?.name, `Episode ${number}`),
+    episodeEmbedId: embedId ? String(embedId) : null,
+    embedUrlSub: first(raw?.embed_url?.sub, raw?.embedUrl?.sub, raw?.sub, raw?.sub_url, null),
+    embedUrlDub: first(raw?.embed_url?.dub, raw?.embedUrl?.dub, raw?.dub, raw?.dub_url, null),
+  };
+}
 
-// ── Popular ────────────────────────────────────────────
-app.get("/popular", async (c) => {
-  try {
-    const page = c.req.query("page") || "1";
-    const data = await tmdb(c.env, "/discover/tv", {
-      with_genres: "16",
-      sort_by: "vote_count.desc",
-      page,
-    });
-    return c.json(normalizeTmdbAnime(data));
-  } catch (err) {
-    console.error("[anime/popular]", err.message);
-    return c.json({ error: err.message, results: [] }, 500);
-  }
-});
+async function recent(c, offset = 0) {
+  const page = positiveInteger(c.req.query("page") || "1", "page") + offset;
+  const payload = await anikoto(c.env, "/recent-anime", { page, per_page: 20 });
+  const results = listFrom(payload).map(normalizeAnime).filter((item) => item.id);
+  return c.json({ results, page, total_pages: payload?.total_pages || 1, total_results: payload?.total || results.length });
+}
+function unavailable(scope, error, c) { console.error(`[anime/${scope}]`, error.message); return c.json({ error: error.message, results: [] }, 503); }
 
-// ── Recent ─────────────────────────────────────────────
-app.get("/recent", async (c) => {
-  try {
-    const page = c.req.query("page") || "1";
-    const data = await tmdb(c.env, "/discover/tv", {
-      with_genres: "16",
-      with_original_language: "ja",
-      sort_by: "first_air_date.desc",
-      "first_air_date.lte": new Date().toISOString().split("T")[0],
-      page,
-    });
-    return c.json(normalizeTmdbAnime(data));
-  } catch (err) {
-    console.error("[anime/recent]", err.message);
-    return c.json({ error: err.message, results: [] }, 500);
-  }
-});
-
-// ── Search ─────────────────────────────────────────────
+app.get("/trending", async (c) => { try { return await recent(c); } catch (error) { return unavailable("trending", error, c); } });
+app.get("/popular", async (c) => { try { return await recent(c, 1); } catch (error) { return unavailable("popular", error, c); } });
+app.get("/recent", async (c) => { try { return await recent(c); } catch (error) { return unavailable("recent", error, c); } });
 app.get("/search", async (c) => {
   try {
-    const query = c.req.query("query") || c.req.query("q") || "";
-    const page = c.req.query("page") || "1";
-    if (!query) return c.json({ error: "query is required", results: [] }, 400);
-
-    const data = await tmdb(c.env, "/search/tv", {
-      query,
-      page,
-    });
-    return c.json(normalizeTmdbAnime(data));
-  } catch (err) {
-    console.error("[anime/search]", err.message);
-    return c.json({ error: err.message, results: [] }, 500);
-  }
+    const query = c.req.query("q") || c.req.query("query");
+    if (!query?.trim()) return c.json({ error: "query is required", results: [] }, 400);
+    const payload = await anikoto(c.env, "/recent-anime", { page: 1, per_page: 200 });
+    const term = query.toLowerCase().trim();
+    const results = listFrom(payload).map(normalizeAnime).filter((item) => item.title.toLowerCase().includes(term));
+    return c.json({ results, page: 1, total_pages: 1, total_results: results.length });
+  } catch (error) { return unavailable("search", error, c); }
 });
-
-// ── Info ────────────────────────────────────────────────
 app.get("/info/:id", async (c) => {
   try {
-    const id = c.req.param("id");
-    const data = await tmdb(c.env, `/tv/${id}`, {
-      append_to_response: "credits,similar,recommendations",
-    });
-
-    return c.json({
-      id: data.id,
-      title: data.name || data.title || "Untitled",
-      image: data.poster_path ? `https://image.tmdb.org/t/p/w500${data.poster_path}` : null,
-      backdrop: data.backdrop_path ? `https://image.tmdb.org/t/p/w1280${data.backdrop_path}` : null,
-      overview: data.overview || null,
-      rating: Number((data.vote_average || 0).toFixed(1)),
-      year: (data.first_air_date || "2026").substring(0, 4),
-      status: data.status || null,
-      totalEpisodes: data.number_of_episodes || null,
-      numberOfSeasons: data.number_of_seasons || 1,
-      seasons: data.seasons || [],
-      genres: (data.genres || []).map((g) => g.name),
-      type: "anime",
-    });
-  } catch (err) {
-    console.error("[anime/info]", err.message);
-    return c.json({ error: err.message }, 500);
-  }
+    const payload = await anikoto(c.env, `/series/${encodeURIComponent(c.req.param("id"))}`);
+    return c.json(normalizeAnime(payload?.anime || payload?.data?.anime || payload?.data || payload));
+  } catch (error) { return unavailable("info", error, c); }
 });
-
-// ── Episodes ───────────────────────────────────────────
 app.get("/episodes/:id", async (c) => {
   try {
     const id = c.req.param("id");
-    const season = c.req.query("season") || "1";
-    const data = await tmdb(c.env, `/tv/${id}/season/${season}`);
-
-    const episodes = (data?.episodes || []).map((ep) => ({
-      id: ep.id,
-      number: ep.episode_number,
-      title: ep.name || `Episode ${ep.episode_number}`,
-      overview: ep.overview,
-      stillPath: ep.still_path ? `https://image.tmdb.org/t/p/w500${ep.still_path}` : null,
-    }));
-
-    return c.json({
-      animeId: id,
-      season: Number(season),
-      episodes,
-      totalEpisodes: episodes.length,
-    });
-  } catch (err) {
-    console.error("[anime/episodes]", err.message);
-    return c.json({ error: err.message, episodes: [] }, 500);
-  }
+    const payload = await anikoto(c.env, `/series/${encodeURIComponent(id)}`);
+    const episodes = episodeList(payload).map((item) => normalizeEpisode(item, id)).filter((item) => item.number > 0);
+    return c.json({ episodes, total: episodes.length });
+  } catch (error) { console.error("[anime/episodes]", error.message); return c.json({ error: error.message, episodes: [] }, 503); }
+});
+app.get("/watch", async (c) => {
+  try {
+    const id = c.req.query("id");
+    if (!id) return c.json({ error: "Anime ID is required" }, 400);
+    const episode = positiveInteger(c.req.query("episode") || "1", "episode");
+    const audio = (c.req.query("audio") || "sub").toLowerCase() === "dub" ? "dub" : "sub";
+    const payload = await anikoto(c.env, `/series/${encodeURIComponent(id)}`);
+    const selected = episodeList(payload).map((item) => normalizeEpisode(item, id)).find((item) => item.number === episode);
+    if (!selected) return c.json({ error: "Episode not found" }, 404);
+    const directUrl = audio === "dub" ? selected.embedUrlDub || selected.embedUrlSub : selected.embedUrlSub || selected.embedUrlDub;
+    const megaPlay = baseUrl(c.env.MEGAPLAY_EMBED_URL, DEFAULT_MEGAPLAY_URL);
+    const embedUrl = directUrl || (selected.episodeEmbedId ? `${megaPlay}/stream/s-2/${encodeURIComponent(selected.episodeEmbedId)}/${audio}` : null);
+    if (!embedUrl) return c.json({ error: "Episode embed is unavailable" }, 503);
+    return c.json({ provider: "Anikoto", embedUrl, episode, audio });
+  } catch (error) { console.error("[anime/watch]", error.message); return c.json({ error: error.message }, 503); }
 });
 
 export default app;
