@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:streamflix_tv/services/vidnest_service.dart';
@@ -6,7 +6,9 @@ import 'package:streamflix_tv/widgets/tv_server_switcher_modal.dart';
 
 void main() {
   group('TvServerSwitcherModal Widget & D-Pad Tests', () {
-    testWidgets('Renders all Vidnest servers with proper badges', (tester) async {
+    testWidgets('Renders all Vidnest servers with proper badges', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1920, 1080);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

@@ -15,7 +15,7 @@ void main() {
   ]);
   // Hide status bar and nav bar for immersive TV experience
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
-  
+
   runApp(
     MultiProvider(
       providers: [

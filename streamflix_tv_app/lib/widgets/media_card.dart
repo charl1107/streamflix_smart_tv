@@ -10,11 +10,7 @@ class MediaCard extends StatelessWidget {
   final MediaItem item;
   final VoidCallback onTap;
 
-  const MediaCard({
-    super.key,
-    required this.item,
-    required this.onTap,
-  });
+  const MediaCard({super.key, required this.item, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +43,11 @@ class MediaCard extends StatelessWidget {
                     placeholder: (context, url) => const ShimmerCard(),
                     errorWidget: (context, url, error) => Container(
                       color: const Color(0xFF1A1A20),
-                      child: const Icon(Icons.movie_outlined, size: 36, color: Colors.white24),
+                      child: const Icon(
+                        Icons.movie_outlined,
+                        size: 36,
+                        color: Colors.white24,
+                      ),
                     ),
                   ),
 
@@ -74,16 +74,26 @@ class MediaCard extends StatelessWidget {
                       top: 8,
                       right: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3.5,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0x2EFFFFFF), width: 0.8),
+                          border: Border.all(
+                            color: const Color(0x2EFFFFFF),
+                            width: 0.8,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 13),
+                            const Icon(
+                              Icons.star_rounded,
+                              color: Color(0xFFFBBF24),
+                              size: 13,
+                            ),
                             const SizedBox(width: 3),
                             Text(
                               item.rating.toStringAsFixed(1),
@@ -104,11 +114,17 @@ class MediaCard extends StatelessWidget {
                       top: 8,
                       left: 8,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3.5),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 7,
+                          vertical: 3.5,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black.withValues(alpha: 0.75),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: const Color(0x2EFFFFFF), width: 0.8),
+                          border: Border.all(
+                            color: const Color(0x2EFFFFFF),
+                            width: 0.8,
+                          ),
                         ),
                         child: Text(
                           year,

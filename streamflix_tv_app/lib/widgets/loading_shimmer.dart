@@ -19,12 +19,8 @@ class BaseShimmer extends StatelessWidget {
 class ShimmerCard extends StatelessWidget {
   final double width;
   final double height;
-  
-  const ShimmerCard({
-    super.key, 
-    this.width = 160, 
-    this.height = 240,
-  });
+
+  const ShimmerCard({super.key, this.width = 160, this.height = 240});
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +46,8 @@ class ShimmerRail extends StatelessWidget {
       scrollDirection: Axis.horizontal,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: 5,
-      separatorBuilder: (context, index) => SizedBox(width: TvLayout.sectionGap(context)),
+      separatorBuilder: (context, index) =>
+          SizedBox(width: TvLayout.sectionGap(context)),
       itemBuilder: (context, index) => ShimmerCard(
         width: TvLayout.posterWidth(context),
         height: TvLayout.posterHeight(context),
@@ -86,7 +83,7 @@ class ShimmerGrid extends StatelessWidget {
         padding: EdgeInsets.all(TvLayout.horizontalInset(context)),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: TvLayout.gridColumns(context),
-          childAspectRatio: 2/3,
+          childAspectRatio: 2 / 3,
           crossAxisSpacing: TvLayout.sectionGap(context),
           mainAxisSpacing: TvLayout.sectionGap(context),
         ),

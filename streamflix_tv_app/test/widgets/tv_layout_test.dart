@@ -39,7 +39,9 @@ void main() {
     expect(columns, 8);
   });
 
-  testWidgets('caps 4K scaling to preserve the shared web design', (tester) async {
+  testWidgets('caps 4K scaling to preserve the shared web design', (
+    tester,
+  ) async {
     double? heroHeight;
     double? inset;
     int? columns;

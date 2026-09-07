@@ -82,39 +82,44 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
       platform.setMixedContentMode(MixedContentMode.alwaysAllow);
     }
 
-    _controller.setNavigationDelegate(NavigationDelegate(
-      onWebResourceError: (error) {
-        debugPrint('[WebView Error] ${error.description}');
-      },
-      onNavigationRequest: (request) {
-        if (AdBlocker.isAdUrl(request.url)) {
-          return NavigationDecision.prevent;
-        }
-        return NavigationDecision.navigate;
-      },
-      onPageFinished: (url) async {
-        try {
-          final css =
-              AdBlocker.adBlockCss.replaceAll('\n', '').replaceAll("'", "\\'");
-          await _controller.runJavaScript('''
+    _controller.setNavigationDelegate(
+      NavigationDelegate(
+        onWebResourceError: (error) {
+          debugPrint('[WebView Error] ${error.description}');
+        },
+        onNavigationRequest: (request) {
+          if (AdBlocker.isAdUrl(request.url)) {
+            return NavigationDecision.prevent;
+          }
+          return NavigationDecision.navigate;
+        },
+        onPageFinished: (url) async {
+          try {
+            final css = AdBlocker.adBlockCss
+                .replaceAll('\n', '')
+                .replaceAll("'", "\\'");
+            await _controller.runJavaScript('''
             (function() {
               const s = document.createElement('style');
               s.innerHTML = '$css';
               (document.head || document.documentElement).appendChild(s);
             })();
           ''');
-          await _controller.runJavaScript(AdBlocker.adBlockScript);
-        } catch (_) {}
+            await _controller.runJavaScript(AdBlocker.adBlockScript);
+          } catch (_) {}
 
-        // Inject D-pad navigation system into the embed
-        await _injectDpadNavigation();
+          // Inject D-pad navigation system into the embed
+          await _injectDpadNavigation();
 
-        if (mounted) setState(() => _isLoading = false);
-      },
-    ));
+          if (mounted) setState(() => _isLoading = false);
+        },
+      ),
+    );
 
-    _controller.loadRequest(Uri.parse(_embedUrl),
-        headers: {'Referer': 'https://streamflix.tv/'});
+    _controller.loadRequest(
+      Uri.parse(_embedUrl),
+      headers: {'Referer': 'https://streamflix.tv/'},
+    );
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -286,24 +291,36 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
     switch (key) {
       // ── Arrow keys → spatial navigation between controls ──
       case LogicalKeyboardKey.arrowRight:
-        await _controller.runJavaScript("window._tvSpatialNav && window._tvSpatialNav('right');");
+        await _controller.runJavaScript(
+          "window._tvSpatialNav && window._tvSpatialNav('right');",
+        );
       case LogicalKeyboardKey.arrowLeft:
-        await _controller.runJavaScript("window._tvSpatialNav && window._tvSpatialNav('left');");
+        await _controller.runJavaScript(
+          "window._tvSpatialNav && window._tvSpatialNav('left');",
+        );
       case LogicalKeyboardKey.arrowUp:
-        await _controller.runJavaScript("window._tvSpatialNav && window._tvSpatialNav('up');");
+        await _controller.runJavaScript(
+          "window._tvSpatialNav && window._tvSpatialNav('up');",
+        );
       case LogicalKeyboardKey.arrowDown:
-        await _controller.runJavaScript("window._tvSpatialNav && window._tvSpatialNav('down');");
+        await _controller.runJavaScript(
+          "window._tvSpatialNav && window._tvSpatialNav('down');",
+        );
 
       // ── Enter / Select → activate focused element ──
       case LogicalKeyboardKey.select:
       case LogicalKeyboardKey.enter:
       case LogicalKeyboardKey.gameButtonA:
       case LogicalKeyboardKey.numpadEnter:
-        await _controller.runJavaScript("window._tvActivate && window._tvActivate();");
+        await _controller.runJavaScript(
+          "window._tvActivate && window._tvActivate();",
+        );
 
       // ── Space → play/pause (quick toggle) ──
       case LogicalKeyboardKey.space:
-        await _controller.runJavaScript("window._tvTogglePlay && window._tvTogglePlay();");
+        await _controller.runJavaScript(
+          "window._tvTogglePlay && window._tvTogglePlay();",
+        );
 
       // ── Back / Escape → close modals or exit ──
       case LogicalKeyboardKey.goBack:
@@ -314,7 +331,9 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
 
       // ── Play/Pause dedicated button ──
       case LogicalKeyboardKey.mediaPlayPause:
-        await _controller.runJavaScript("window._tvTogglePlay && window._tvTogglePlay();");
+        await _controller.runJavaScript(
+          "window._tvTogglePlay && window._tvTogglePlay();",
+        );
 
       // ── Menu / Context → open settings if available ──
       case LogicalKeyboardKey.contextMenu:
@@ -337,15 +356,25 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
 
       // ── Rewind / Fast-forward media keys ──
       case LogicalKeyboardKey.mediaRewind:
-        await _controller.runJavaScript("window._tvDispatchKey('ArrowLeft', 'ArrowLeft');");
+        await _controller.runJavaScript(
+          "window._tvDispatchKey('ArrowLeft', 'ArrowLeft');",
+        );
       case LogicalKeyboardKey.mediaFastForward:
-        await _controller.runJavaScript("window._tvDispatchKey('ArrowRight', 'ArrowRight');");
+        await _controller.runJavaScript(
+          "window._tvDispatchKey('ArrowRight', 'ArrowRight');",
+        );
       case LogicalKeyboardKey.mediaPlay:
-        await _controller.runJavaScript("var v = document.querySelector('video'); if(v && v.paused) v.play();");
+        await _controller.runJavaScript(
+          "var v = document.querySelector('video'); if(v && v.paused) v.play();",
+        );
       case LogicalKeyboardKey.mediaPause:
-        await _controller.runJavaScript("var v = document.querySelector('video'); if(v && !v.paused) v.pause();");
+        await _controller.runJavaScript(
+          "var v = document.querySelector('video'); if(v && !v.paused) v.pause();",
+        );
       case LogicalKeyboardKey.mediaStop:
-        await _controller.runJavaScript("var v = document.querySelector('video'); if(v) { v.pause(); v.currentTime = 0; }");
+        await _controller.runJavaScript(
+          "var v = document.querySelector('video'); if(v) { v.pause(); v.currentTime = 0; }",
+        );
 
       default:
         return;
@@ -415,8 +444,7 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
           onKeyEvent: _handleKeyEvent,
           child: Stack(
             children: [
-              if (_embedUrl.isNotEmpty)
-                WebViewWidget(controller: _controller),
+              if (_embedUrl.isNotEmpty) WebViewWidget(controller: _controller),
 
               if (_isLoading)
                 const Center(
@@ -437,15 +465,20 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(24),
                         ),
-                        child: const Icon(Icons.arrow_back,
-                            color: Colors.white, size: 24),
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
                     if (_title.isNotEmpty) ...[
                       const SizedBox(width: 12),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 6),
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(16),

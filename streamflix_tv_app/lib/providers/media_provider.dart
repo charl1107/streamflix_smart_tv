@@ -33,7 +33,8 @@ class MediaProvider extends ChangeNotifier {
   List<MediaItem> get popularShows => popularTv;
   List<MediaItem> get topRatedShows => topRatedTv;
   List<Genre> get showGenres => tvGenres;
-  bool get isLoading => isHomeLoading || isMoviesLoading || isShowsLoading || isAnimeLoading;
+  bool get isLoading =>
+      isHomeLoading || isMoviesLoading || isShowsLoading || isAnimeLoading;
 
   Future<void> loadAnime() async {
     isAnimeLoading = true;
@@ -90,8 +91,10 @@ class MediaProvider extends ChangeNotifier {
       ]);
 
       trendingMovies = discoverFutures[0] as List<MediaItem>;
-      popularMovies = (discoverFutures[1] as Map<String, dynamic>)['results'] ?? [];
-      topRatedMovies = (discoverFutures[2] as Map<String, dynamic>)['results'] ?? [];
+      popularMovies =
+          (discoverFutures[1] as Map<String, dynamic>)['results'] ?? [];
+      topRatedMovies =
+          (discoverFutures[2] as Map<String, dynamic>)['results'] ?? [];
 
       if (movieGenres.isEmpty) {
         movieGenres = await _tmdbService.getGenres(type: 'movie');
@@ -132,7 +135,8 @@ class MediaProvider extends ChangeNotifier {
 
       trendingTv = discoverFutures[0] as List<MediaItem>;
       popularTv = (discoverFutures[1] as Map<String, dynamic>)['results'] ?? [];
-      topRatedTv = (discoverFutures[2] as Map<String, dynamic>)['results'] ?? [];
+      topRatedTv =
+          (discoverFutures[2] as Map<String, dynamic>)['results'] ?? [];
 
       if (tvGenres.isEmpty) {
         tvGenres = await _tmdbService.getGenres(type: 'tv');

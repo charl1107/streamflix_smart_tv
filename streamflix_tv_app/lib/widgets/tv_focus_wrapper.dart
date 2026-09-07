@@ -69,7 +69,7 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
         if (event is KeyDownEvent) {
           if (event.logicalKey == LogicalKeyboardKey.select ||
               event.logicalKey == LogicalKeyboardKey.enter ||
-              event.logicalKey == LogicalKeyboardKey.gameButtonA || 
+              event.logicalKey == LogicalKeyboardKey.gameButtonA ||
               event.logicalKey == LogicalKeyboardKey.numpadEnter) {
             widget.onTap();
             return KeyEventResult.handled;
@@ -88,7 +88,9 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
             curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               border: Border.all(
-                color: _isFocused ? const Color(0xFFE50914) : Colors.transparent,
+                color: _isFocused
+                    ? const Color(0xFFE50914)
+                    : Colors.transparent,
                 width: 2.2,
               ),
               borderRadius: effectiveRadius,
@@ -98,7 +100,7 @@ class _TvFocusWrapperState extends State<TvFocusWrapper> {
                         color: const Color(0xFFE50914).withValues(alpha: 0.55),
                         blurRadius: 16,
                         spreadRadius: 3,
-                      )
+                      ),
                     ]
                   : [],
             ),

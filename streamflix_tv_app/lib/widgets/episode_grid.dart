@@ -23,107 +23,119 @@ class EpisodeGrid extends StatelessWidget {
       return const Center(
         child: Padding(
           padding: EdgeInsets.all(24.0),
-          child: Text('No episodes available', style: TextStyle(color: Colors.white70)),
+          child: Text(
+            'No episodes available',
+            style: TextStyle(color: Colors.white70),
+          ),
         ),
       );
     }
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.all(TvLayout.horizontalInset(context) / 2),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: TvLayout.gridColumns(context).clamp(4, 6),
-        childAspectRatio: 16 / 12,
-        crossAxisSpacing: TvLayout.sectionGap(context),
-        mainAxisSpacing: TvLayout.sectionGap(context),
-      ),
-      itemCount: episodes.length,
-      itemBuilder: (context, index) {
-        final ep = episodes[index];
-        int episodeNumber = 0;
-        String title = '';
-        String? stillPath;
+    return FocusTraversalGroup(
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        padding: EdgeInsets.all(TvLayout.horizontalInset(context) / 2),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: TvLayout.gridColumns(context).clamp(4, 6),
+          childAspectRatio: 16 / 12,
+          crossAxisSpacing: TvLayout.sectionGap(context),
+          mainAxisSpacing: TvLayout.sectionGap(context),
+        ),
+        itemCount: episodes.length,
+        itemBuilder: (context, index) {
+          final ep = episodes[index];
+          int episodeNumber = 0;
+          String title = '';
+          String? stillPath;
 
-        if (ep is Episode) {
-          episodeNumber = ep.episodeNumber;
-          title = ep.name.isNotEmpty ? ep.name : 'Episode $episodeNumber';
-          stillPath = ep.stillPath;
-        } else if (ep is Map<String, dynamic>) {
-          episodeNumber = ep['number'] ?? ep['episode_number'] ?? ep['episodeNumber'] ?? (index + 1);
-          title = ep['title'] ?? ep['name'] ?? 'Episode $episodeNumber';
-          stillPath = ep['still_path'] ?? ep['image'] ?? ep['stillPath'];
-        }
+          if (ep is Episode) {
+            episodeNumber = ep.episodeNumber;
+            title = ep.name.isNotEmpty ? ep.name : 'Episode $episodeNumber';
+            stillPath = ep.stillPath;
+          } else if (ep is Map<String, dynamic>) {
+            episodeNumber =
+                ep['number'] ??
+                ep['episode_number'] ??
+                ep['episodeNumber'] ??
+                (index + 1);
+            title = ep['title'] ?? ep['name'] ?? 'Episode $episodeNumber';
+            stillPath = ep['still_path'] ?? ep['image'] ?? ep['stillPath'];
+          }
 
-        final hasEpisodeStill = stillPath != null && stillPath.isNotEmpty;
-        final imagePath = hasEpisodeStill ? stillPath : fallbackStillPath;
+          final hasEpisodeStill = stillPath != null && stillPath.isNotEmpty;
+          final imagePath = hasEpisodeStill ? stillPath : fallbackStillPath;
 
-        return TvFocusWrapper(
-          onTap: () => onEpisodeTap(episodeNumber),
-          child: Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFF2C2C2C),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: imagePath != null && imagePath.isNotEmpty
-                      ? CachedNetworkImage(
-                          // Anime catalogues commonly do not expose individual
-                          // episode stills. In that case, reuse the series
-                          // backdrop rather than rendering an empty placeholder.
-                          imageUrl: hasEpisodeStill
-                              ? ApiConfig.posterUrl(imagePath)
-                              : ApiConfig.backdropUrl(imagePath),
-                          fit: BoxFit.cover,
-                          errorWidget: (context, url, error) => Container(
+          return TvFocusWrapper(
+            onTap: () => onEpisodeTap(episodeNumber),
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFF2C2C2C),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: imagePath != null && imagePath.isNotEmpty
+                        ? CachedNetworkImage(
+                            // Anime catalogues commonly do not expose individual
+                            // episode stills. In that case, reuse the series
+                            // backdrop rather than rendering an empty placeholder.
+                            imageUrl: hasEpisodeStill
+                                ? ApiConfig.posterUrl(imagePath)
+                                : ApiConfig.backdropUrl(imagePath),
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) => Container(
+                              color: Colors.grey[800],
+                              child: const Icon(
+                                Icons.tv,
+                                color: Colors.white54,
+                              ),
+                            ),
+                          )
+                        : Container(
                             color: Colors.grey[800],
                             child: const Icon(Icons.tv, color: Colors.white54),
                           ),
-                        )
-                      : Container(
-                          color: Colors.grey[800],
-                          child: const Icon(Icons.tv, color: Colors.white54),
-                        ),
-                ),
-                Expanded(
-                  flex: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Episode $episodeNumber',
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+                  ),
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Episode $episodeNumber',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          title,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
+                          const SizedBox(height: 4),
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

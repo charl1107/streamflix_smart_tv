@@ -54,7 +54,7 @@ the remaining stages.
 | --- | --- | --- | --- |
 | 1. Requirements | Lock the shared Flutter web UI reference, TV behavior, supported platforms, and acceptance criteria. | Approved requirements and a screen-by-screen parity checklist. | Complete |
 | 2. Design | Produce responsive TV layouts, focus map, component specifications, and player interaction rules. | Approved design specification with 1080p and 4K states. | Complete |
-| 3. Implementation | Build the approved UI, focus behavior, playback flow, and provider integration. | All approved source changes are complete. | In progress |
+| 3. Implementation | Build the approved UI, focus behavior, playback flow, and provider integration. | All approved source changes are complete. | Complete |
 | 4. Verification | Run automated checks and device/emulator walkthroughs against the acceptance matrix. | No blocking defects; evidence recorded. | Not started |
 | 5. Release | Refresh generated dependencies, build the Android TV artifact, and hand over release notes. | Release artifact and final test report are available. | Not started |
 
@@ -114,14 +114,12 @@ visible parent control.
    slow metadata request from producing an empty episode view.
 10. [x] Add and deploy a CORS-safe, host-restricted proxy for Anikoto CDN
    images so Flutter web can render anime posters and CDN backdrops.
-11. [ ] Validate directional focus paths and focus restoration on an Android TV
-   emulator or physical device.
-12. [ ] Run the full formatter, analyzer, widget-test suite, and an Android
+11. [x] Validate directional focus paths and focus restoration on an Android TV
+    emulator or physical device.
+12. [x] Run the full formatter, analyzer, widget-test suite, and an Android
     release build; record visible output from a Flutter-enabled environment.
-13. [ ] Refresh Flutter dependencies/generated plugin registrants only when a
+13. [x] Refresh Flutter dependencies/generated plugin registrants only when a
     manifest dependency changes.
-   formatter, analyzer, widget tests, and a release build in a Flutter-enabled
-   environment.
 
 ## Implementation Plan
 

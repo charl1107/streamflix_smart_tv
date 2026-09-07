@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:streamflix_tv/models/media_item.dart';
 import 'package:streamflix_tv/models/genre.dart';
 import 'package:streamflix_tv/models/season_episode.dart';
@@ -60,7 +60,12 @@ void main() {
     });
 
     test('AdBlocker blocks known ad domains', () {
-      expect(AdBlocker.isAdUrl('https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js'), true);
+      expect(
+        AdBlocker.isAdUrl(
+          'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js',
+        ),
+        true,
+      );
       expect(AdBlocker.isAdUrl('https://popads.net/serve'), true);
       expect(AdBlocker.isAdUrl('https://doubleclick.net/ad'), true);
       expect(AdBlocker.isAdUrl('https://vidnest.fun/movie/123'), false);

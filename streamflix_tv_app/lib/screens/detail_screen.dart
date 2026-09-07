@@ -21,7 +21,7 @@ class _DetailScreenState extends State<DetailScreen> {
   late MediaItem _mediaItem;
   bool _isLoading = true;
   MediaItem? _fullDetails;
-  
+
   List<dynamic> _episodes = [];
   int _selectedSeason = 1;
   int _totalSeasons = 1;
@@ -42,12 +42,13 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _loadDetails() async {
     setState(() => _isLoading = true);
-    
+
     try {
       if (_mediaItem.playbackType == 'tv') {
         final tvId = int.tryParse(_mediaItem.id.toString()) ?? 0;
         _fullDetails = await _tmdbService.getTvDetails(tvId);
-        _totalSeasons = _fullDetails?.numberOfSeasons ?? _fullDetails?.seasons.length ?? 1;
+        _totalSeasons =
+            _fullDetails?.numberOfSeasons ?? _fullDetails?.seasons.length ?? 1;
         if (_totalSeasons < 1) _totalSeasons = 1;
         _cast = _fullDetails?.cast ?? [];
         _recommendations = _fullDetails?.recommendations ?? [];
@@ -92,7 +93,12 @@ class _DetailScreenState extends State<DetailScreen> {
     }
   }
 
-  void _openPlayerUrl(String embedUrl, {String? title, int? season, int? episode}) {
+  void _openPlayerUrl(
+    String embedUrl, {
+    String? title,
+    int? season,
+    int? episode,
+  }) {
     PlayerRouter.open(
       context,
       embedUrl: embedUrl,
@@ -118,7 +124,10 @@ class _DetailScreenState extends State<DetailScreen> {
   Future<void> _onEpisodeTap(int episodeNumber) async {
     try {
       final embedUrl = _mediaItem.playbackType == 'anime'
-          ? await _tmdbService.getAnimeEmbedUrl(_mediaItem.id.toString(), episodeNumber)
+          ? await _tmdbService.getAnimeEmbedUrl(
+              _mediaItem.id.toString(),
+              episodeNumber,
+            )
           : EmbedService.getTvUrl(
               _mediaItem.id,
               _selectedSeason,
@@ -127,7 +136,8 @@ class _DetailScreenState extends State<DetailScreen> {
 
       _openPlayerUrl(
         embedUrl,
-        title: '${_mediaItem.title} - ${_mediaItem.playbackType == 'anime' ? 'Episode' : 'S$_selectedSeason Ep'} $episodeNumber',
+        title:
+            '${_mediaItem.title} - ${_mediaItem.playbackType == 'anime' ? 'Episode' : 'S$_selectedSeason Ep'} $episodeNumber',
         season: _selectedSeason,
         episode: episodeNumber,
       );
@@ -144,304 +154,431 @@ class _DetailScreenState extends State<DetailScreen> {
     final item = _fullDetails ?? _mediaItem;
     final title = item.title.isNotEmpty ? item.title : 'Unknown';
     final year = item.year?.toString() ?? '';
-    
+
     return Scaffold(
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: Colors.blue))
-        : SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Backdrop & Title
-                SizedBox(
-                  height: TvLayout.heroHeight(context),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CachedNetworkImage(
-                        imageUrl: ApiConfig.backdropUrl(item.backdropPath ?? item.posterPath ?? ''),
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) => Container(color: Colors.grey[900]),
-                      ),
-                      Container(
-                        decoration: const BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.transparent, Colors.black87, Colors.black],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator(color: Colors.blue))
+          : FocusTraversalGroup(
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Backdrop & Title
+                    SizedBox(
+                      height: TvLayout.heroHeight(context),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CachedNetworkImage(
+                            imageUrl: ApiConfig.backdropUrl(
+                              item.backdropPath ?? item.posterPath ?? '',
+                            ),
+                            fit: BoxFit.cover,
+                            errorWidget: (context, url, error) =>
+                                Container(color: Colors.grey[900]),
                           ),
-                        ),
-                      ),
-                      Positioned(
-                        left: TvLayout.horizontalInset(context),
-                        bottom: TvLayout.horizontalInset(context),
-                        right: TvLayout.horizontalInset(context),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            if (item.posterPath != null && item.posterPath!.isNotEmpty)
-                              Container(
-                                width: TvLayout.posterWidth(context) * 0.78,
-                                height: TvLayout.posterHeight(context) * 0.78,
-                                margin: EdgeInsets.only(right: TvLayout.sectionGap(context)),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(12),
-                                  image: DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                      ApiConfig.posterUrl(item.posterPath!),
-                                    ),
-                                    fit: BoxFit.cover,
-                                  ),
-                                ),
+                          Container(
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black87,
+                                  Colors.black,
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
                               ),
-                            SizedBox(width: TvLayout.sectionGap(context)),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    title,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 36,
-                                      fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Positioned(
+                            left: TvLayout.horizontalInset(context),
+                            bottom: TvLayout.horizontalInset(context),
+                            right: TvLayout.horizontalInset(context),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                if (item.posterPath != null &&
+                                    item.posterPath!.isNotEmpty)
+                                  Container(
+                                    width: TvLayout.posterWidth(context) * 0.78,
+                                    height:
+                                        TvLayout.posterHeight(context) * 0.78,
+                                    margin: EdgeInsets.only(
+                                      right: TvLayout.sectionGap(context),
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      image: DecorationImage(
+                                        image: CachedNetworkImageProvider(
+                                          ApiConfig.posterUrl(item.posterPath!),
+                                        ),
+                                        fit: BoxFit.cover,
+                                      ),
                                     ),
                                   ),
-                                  const SizedBox(height: 10),
-                                  // Frosted Meta Chips matching streamflix-cf MediaDrawer
-                                  Row(
+                                SizedBox(width: TvLayout.sectionGap(context)),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      if (item.rating > 0) ...[
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withValues(alpha: 0.5),
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              const Icon(Icons.star_rounded, color: Color(0xFFFBBF24), size: 16),
-                                              const SizedBox(width: 4),
-                                              Text(
-                                                item.rating.toStringAsFixed(1),
-                                                style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.bold),
+                                      Text(
+                                        title,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 36,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 10),
+                                      // Frosted Meta Chips matching streamflix-cf MediaDrawer
+                                      Row(
+                                        children: [
+                                          if (item.rating > 0) ...[
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0x33FFFFFF,
+                                                  ),
+                                                  width: 0.8,
+                                                ),
                                               ),
-                                            ],
-                                          ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.star_rounded,
+                                                    color: Color(0xFFFBBF24),
+                                                    size: 16,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    item.rating.toStringAsFixed(
+                                                      1,
+                                                    ),
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      color: Colors.white,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                          ],
+                                          if (year.isNotEmpty) ...[
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0x33FFFFFF,
+                                                  ),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                year,
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                          ],
+                                          if (item.runtime != null)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.black.withValues(
+                                                  alpha: 0.5,
+                                                ),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                                border: Border.all(
+                                                  color: const Color(
+                                                    0x33FFFFFF,
+                                                  ),
+                                                  width: 0.8,
+                                                ),
+                                              ),
+                                              child: Text(
+                                                '${item.runtime} min',
+                                                style: const TextStyle(
+                                                  fontSize: 14,
+                                                  color: Colors.white70,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      const SizedBox(height: 16),
+                                      Text(
+                                        item.overview ?? '',
+                                        maxLines: 4,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: Colors.white70,
+                                          fontSize: 16,
+                                          height: 1.4,
                                         ),
-                                        const SizedBox(width: 10),
-                                      ],
-                                      if (year.isNotEmpty) ...[
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withValues(alpha: 0.5),
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                      ),
+                                      const SizedBox(height: 24),
+                                      if (item.mediaType != 'tv')
+                                        TvFocusWrapper(
+                                          onTap: _onPlayPressed,
+                                          autofocus: true,
+                                          borderRadius: BorderRadius.circular(
+                                            30,
                                           ),
-                                          child: Text(year, style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w600)),
-                                        ),
-                                        const SizedBox(width: 10),
-                                      ],
-                                      if (item.runtime != null)
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withValues(alpha: 0.5),
-                                            borderRadius: BorderRadius.circular(20),
-                                            border: Border.all(color: const Color(0x33FFFFFF), width: 0.8),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 36,
+                                              vertical: 14,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: const Color(0xFFE50914),
+                                              borderRadius:
+                                                  BorderRadius.circular(30),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: const Color(
+                                                    0xFFE50914,
+                                                  ).withValues(alpha: 0.5),
+                                                  blurRadius: 18,
+                                                  offset: const Offset(0, 4),
+                                                ),
+                                              ],
+                                            ),
+                                            child: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  Icons.play_arrow_rounded,
+                                                  color: Colors.white,
+                                                  size: 24,
+                                                ),
+                                                SizedBox(width: 8),
+                                                Text(
+                                                  item.mediaType == 'anime'
+                                                      ? 'Play Anime'
+                                                      : 'Play Movie',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 17,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
                                           ),
-                                          child: Text('${item.runtime} min', style: const TextStyle(fontSize: 14, color: Colors.white70, fontWeight: FontWeight.w600)),
                                         ),
                                     ],
                                   ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    item.overview ?? '',
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(color: Colors.white70, fontSize: 16, height: 1.4),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  if (item.mediaType != 'tv')
-                                    TvFocusWrapper(
-                                      onTap: _onPlayPressed,
-                                      autofocus: true,
-                                      borderRadius: BorderRadius.circular(30),
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE50914),
-                                          borderRadius: BorderRadius.circular(30),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: const Color(0xFFE50914).withValues(alpha: 0.5),
-                                              blurRadius: 18,
-                                              offset: const Offset(0, 4),
-                                            ),
-                                          ],
-                                        ),
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(Icons.play_arrow_rounded, color: Colors.white, size: 24),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              item.mediaType == 'anime'
-                                                  ? 'Play Anime'
-                                                  : 'Play Movie',
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 17,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          Positioned(
+                            top: TvLayout.headerTopInset(context) + 12,
+                            left: TvLayout.horizontalInset(context),
+                            child: TvFocusWrapper(
+                              onTap: () => Navigator.pop(context),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(24),
+                                ),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // TV Shows Episodes Section
+                    if (_mediaItem.playbackType == 'tv' ||
+                        _mediaItem.playbackType == 'anime') ...[
+                      if (_mediaItem.playbackType == 'tv' && _totalSeasons > 1)
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: TvLayout.horizontalInset(context),
+                            vertical: TvLayout.sectionGap(context),
+                          ),
+                          child: DropdownButton<int>(
+                            value: _selectedSeason,
+                            dropdownColor: const Color(0xFF1E1E1E),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                            ),
+                            items: List.generate(
+                              _totalSeasons,
+                              (index) => DropdownMenuItem(
+                                value: index + 1,
+                                child: Text('Season ${index + 1}'),
+                              ),
+                            ),
+                            onChanged: (val) {
+                              if (val != null) {
+                                setState(() {
+                                  _selectedSeason = val;
+                                });
+                                _loadTvSeason(val);
+                              }
+                            },
+                          ),
+                        ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: TvLayout.horizontalInset(context),
+                          vertical: TvLayout.sectionGap(context) / 2,
+                        ),
+                        child: Text(
+                          'Episodes',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      Positioned(
-                        top: TvLayout.headerTopInset(context) + 12,
-                        left: TvLayout.horizontalInset(context),
-                        child: TvFocusWrapper(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: const Icon(Icons.arrow_back, color: Colors.white),
-                          ),
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: TvLayout.horizontalInset(context) / 2,
+                        ),
+                        child: EpisodeGrid(
+                          episodes: _episodes,
+                          onEpisodeTap: _onEpisodeTap,
+                          fallbackStillPath: _mediaItem.playbackType == 'anime'
+                              ? (_fullDetails?.backdropPath ??
+                                    _mediaItem.backdropPath)
+                              : null,
                         ),
                       ),
                     ],
-                  ),
-                ),
-                
-                // TV Shows Episodes Section
-                if (_mediaItem.playbackType == 'tv' ||
-                    _mediaItem.playbackType == 'anime') ...[
-                  if (_mediaItem.playbackType == 'tv' && _totalSeasons > 1)
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: TvLayout.horizontalInset(context),
-                        vertical: TvLayout.sectionGap(context),
-                      ),
-                      child: DropdownButton<int>(
-                        value: _selectedSeason,
-                        dropdownColor: const Color(0xFF1E1E1E),
-                        style: const TextStyle(color: Colors.white, fontSize: 18),
-                        items: List.generate(
-                          _totalSeasons, 
-                          (index) => DropdownMenuItem(
-                            value: index + 1,
-                            child: Text('Season ${index + 1}'),
+
+                    // Cast Section
+                    if (_cast.isNotEmpty) ...[
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: TvLayout.horizontalInset(context),
+                          vertical: TvLayout.sectionGap(context),
+                        ),
+                        child: Text(
+                          'Cast',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
-                        onChanged: (val) {
-                          if (val != null) {
-                            setState(() {
-                              _selectedSeason = val;
-                            });
-                            _loadTvSeason(val);
-                          }
+                      ),
+                      SizedBox(
+                        height: 120,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: EdgeInsets.symmetric(
+                            horizontal: TvLayout.horizontalInset(context),
+                          ),
+                          itemCount: _cast.length,
+                          itemBuilder: (context, index) {
+                            final actor = _cast[index];
+                            final profilePath = actor['profile_path'];
+                            return Container(
+                              width: 80,
+                              margin: const EdgeInsets.only(right: 16),
+                              child: Column(
+                                children: [
+                                  CircleAvatar(
+                                    radius: 32,
+                                    backgroundImage: profilePath != null
+                                        ? CachedNetworkImageProvider(
+                                            ApiConfig.posterUrl(profilePath),
+                                          )
+                                        : null,
+                                    backgroundColor: Colors.grey[800],
+                                    child: profilePath == null
+                                        ? const Icon(
+                                            Icons.person,
+                                            color: Colors.white54,
+                                          )
+                                        : null,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    actor['name'] ?? '',
+                                    maxLines: 2,
+                                    textAlign: TextAlign.center,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+
+                    // Recommendations
+                    if (_recommendations.isNotEmpty) ...[
+                      const SizedBox(height: 32),
+                      MediaRail(
+                        title: 'More Like This',
+                        items: _recommendations,
+                        onItemTap: (recItem) {
+                          Navigator.pushReplacementNamed(
+                            context,
+                            '/detail',
+                            arguments: recItem,
+                          );
                         },
                       ),
-                    ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: TvLayout.horizontalInset(context),
-                      vertical: TvLayout.sectionGap(context) / 2,
-                    ),
-                    child: Text(
-                      'Episodes',
-                      style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.symmetric(horizontal: TvLayout.horizontalInset(context) / 2),
-                    child: EpisodeGrid(
-                      episodes: _episodes,
-                      onEpisodeTap: _onEpisodeTap,
-                      fallbackStillPath: _mediaItem.playbackType == 'anime'
-                          ? (_fullDetails?.backdropPath ?? _mediaItem.backdropPath)
-                          : null,
-                    ),
-                  ),
-                ],
+                    ],
 
-                // Cast Section
-                if (_cast.isNotEmpty) ...[
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: TvLayout.horizontalInset(context),
-                      vertical: TvLayout.sectionGap(context),
-                    ),
-                    child: Text('Cast', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                  ),
-                  SizedBox(
-                    height: 120,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      padding: EdgeInsets.symmetric(horizontal: TvLayout.horizontalInset(context)),
-                      itemCount: _cast.length,
-                      itemBuilder: (context, index) {
-                        final actor = _cast[index];
-                        final profilePath = actor['profile_path'];
-                        return Container(
-                          width: 80,
-                          margin: const EdgeInsets.only(right: 16),
-                          child: Column(
-                            children: [
-                              CircleAvatar(
-                                radius: 32,
-                                backgroundImage: profilePath != null 
-                                  ? CachedNetworkImageProvider(ApiConfig.posterUrl(profilePath)) 
-                                  : null,
-                                backgroundColor: Colors.grey[800],
-                                child: profilePath == null ? const Icon(Icons.person, color: Colors.white54) : null,
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                actor['name'] ?? '',
-                                maxLines: 2,
-                                textAlign: TextAlign.center,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(color: Colors.white70, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ],
-
-                // Recommendations
-                if (_recommendations.isNotEmpty) ...[
-                  const SizedBox(height: 32),
-                  MediaRail(
-                    title: 'More Like This',
-                    items: _recommendations,
-                    onItemTap: (recItem) {
-                      Navigator.pushReplacementNamed(context, '/detail', arguments: recItem);
-                    },
-                  ),
-                ],
-                
-                const SizedBox(height: 48),
-              ],
+                    const SizedBox(height: 48),
+                  ],
+                ),
+              ),
             ),
-          ),
     );
   }
 }

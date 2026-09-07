@@ -20,15 +20,60 @@ class VidnestService {
 
   /// Supported Vidnest servers as per API documentation
   static const List<VidnestServer> servers = [
-    VidnestServer(id: 'lamda', name: 'Lamda', description: 'Primary High-Speed CDN', badge: 'Fast'),
-    VidnestServer(id: 'primesrc', name: 'PrimeSrc', description: 'Multi-Bitrate Stream', badge: '1080p'),
-    VidnestServer(id: 'gama', name: 'Gama', description: 'Ultra-Low Latency', badge: 'HD'),
-    VidnestServer(id: 'alfa', name: 'Alfa', description: 'Global Edge Mirror', badge: 'Stable'),
-    VidnestServer(id: 'beta', name: 'Beta', description: 'High Compatibility', badge: 'HD'),
-    VidnestServer(id: 'sigma', name: 'Sigma', description: 'Multi-Source Backup', badge: 'Mirror'),
-    VidnestServer(id: 'catflix', name: 'Catflix', description: 'Fast Content Stream', badge: 'Fast'),
-    VidnestServer(id: 'hexa', name: 'Hexa', description: 'Alternative Server 1', badge: 'HD'),
-    VidnestServer(id: 'delta', name: 'Delta', description: 'Alternative Server 2', badge: 'Backup'),
+    VidnestServer(
+      id: 'lamda',
+      name: 'Lamda',
+      description: 'Primary High-Speed CDN',
+      badge: 'Fast',
+    ),
+    VidnestServer(
+      id: 'primesrc',
+      name: 'PrimeSrc',
+      description: 'Multi-Bitrate Stream',
+      badge: '1080p',
+    ),
+    VidnestServer(
+      id: 'gama',
+      name: 'Gama',
+      description: 'Ultra-Low Latency',
+      badge: 'HD',
+    ),
+    VidnestServer(
+      id: 'alfa',
+      name: 'Alfa',
+      description: 'Global Edge Mirror',
+      badge: 'Stable',
+    ),
+    VidnestServer(
+      id: 'beta',
+      name: 'Beta',
+      description: 'High Compatibility',
+      badge: 'HD',
+    ),
+    VidnestServer(
+      id: 'sigma',
+      name: 'Sigma',
+      description: 'Multi-Source Backup',
+      badge: 'Mirror',
+    ),
+    VidnestServer(
+      id: 'catflix',
+      name: 'Catflix',
+      description: 'Fast Content Stream',
+      badge: 'Fast',
+    ),
+    VidnestServer(
+      id: 'hexa',
+      name: 'Hexa',
+      description: 'Alternative Server 1',
+      badge: 'HD',
+    ),
+    VidnestServer(
+      id: 'delta',
+      name: 'Delta',
+      description: 'Alternative Server 2',
+      badge: 'Backup',
+    ),
   ];
 
   static VidnestServer defaultServer = servers[0];

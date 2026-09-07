@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:streamflix_tv/services/ad_blocker.dart';
 
 void main() {
@@ -20,7 +20,11 @@ void main() {
       ];
 
       for (final url in sampleAdUrls) {
-        expect(AdBlocker.isAdUrl(url), true, reason: 'Failed to block ad URL: $url');
+        expect(
+          AdBlocker.isAdUrl(url),
+          true,
+          reason: 'Failed to block ad URL: $url',
+        );
       }
     });
 
@@ -35,52 +39,77 @@ void main() {
       ];
 
       for (final url in legitimateUrls) {
-        expect(AdBlocker.isAdUrl(url), false, reason: 'Legitimate URL falsely blocked: $url');
+        expect(
+          AdBlocker.isAdUrl(url),
+          false,
+          reason: 'Legitimate URL falsely blocked: $url',
+        );
       }
     });
 
-    test('shouldAllowNavigation permits internal streaming but traps ad redirects', () {
-      const currentUrl = 'https://vidnest.fun/movie/324857';
+    test(
+      'shouldAllowNavigation permits internal streaming but traps ad redirects',
+      () {
+        const currentUrl = 'https://vidnest.fun/movie/324857';
 
-      // Block external ad network navigation
-      expect(
-        AdBlocker.shouldAllowNavigation(currentUrl, 'https://popads.net/lander?source=vid'),
-        false,
-      );
-      expect(
-        AdBlocker.shouldAllowNavigation(currentUrl, 'https://betweendigital.com/track'),
-        false,
-      );
-      expect(
-        AdBlocker.shouldAllowNavigation(currentUrl, 'https://sketchy-reward-scam.xyz/win'),
-        false,
-      );
+        // Block external ad network navigation
+        expect(
+          AdBlocker.shouldAllowNavigation(
+            currentUrl,
+            'https://popads.net/lander?source=vid',
+          ),
+          false,
+        );
+        expect(
+          AdBlocker.shouldAllowNavigation(
+            currentUrl,
+            'https://betweendigital.com/track',
+          ),
+          false,
+        );
+        expect(
+          AdBlocker.shouldAllowNavigation(
+            currentUrl,
+            'https://sketchy-reward-scam.xyz/win',
+          ),
+          false,
+        );
 
-      // Allow same-origin or authorized media subresource navigation
-      expect(
-        AdBlocker.shouldAllowNavigation(currentUrl, 'https://vidnest.fun/movie/324857?server=alfa'),
-        true,
-      );
-      expect(
-        AdBlocker.shouldAllowNavigation(currentUrl, 'https://edge-cdn-streaming.com/playlist.m3u8'),
-        true,
-      );
-      expect(
-        AdBlocker.shouldAllowNavigation(currentUrl, 'about:blank'),
-        true,
-      );
-    });
+        // Allow same-origin or authorized media subresource navigation
+        expect(
+          AdBlocker.shouldAllowNavigation(
+            currentUrl,
+            'https://vidnest.fun/movie/324857?server=alfa',
+          ),
+          true,
+        );
+        expect(
+          AdBlocker.shouldAllowNavigation(
+            currentUrl,
+            'https://edge-cdn-streaming.com/playlist.m3u8',
+          ),
+          true,
+        );
+        expect(
+          AdBlocker.shouldAllowNavigation(currentUrl, 'about:blank'),
+          true,
+        );
+      },
+    );
 
-    test('Shield scripts contain window.open neutralization and clickjack prevention', () {
-      final script = AdBlocker.adBlockScript;
-      expect(script, contains('window.open = noop'));
-      expect(script, contains('window.alert = noop'));
-      expect(script, contains('cleanAdOverlays'));
-      expect(script, contains('MutationObserver'));
+    test(
+      'Shield scripts contain window.open neutralization and clickjack prevention',
+      () {
+        final script = AdBlocker.adBlockScript;
+        expect(script, contains('window.open = noop'));
+        expect(script, contains('window.alert = noop'));
+        expect(script, contains('cleanAdOverlays'));
+        expect(script, contains('MutationObserver'));
 
-      final css = AdBlocker.adBlockCss;
-      expect(css, contains('display: none !important'));
-      expect(css, contains('.adsbygoogle'));
-    });
+        final css = AdBlocker.adBlockCss;
+        expect(css, contains('display: none !important'));
+        expect(css, contains('.adsbygoogle'));
+      },
+    );
   });
 }

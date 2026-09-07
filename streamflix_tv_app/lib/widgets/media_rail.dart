@@ -43,32 +43,37 @@ class MediaRail extends StatelessWidget {
           height: TvLayout.railHeight(context),
           child: isLoading
               ? Padding(
-                  padding: EdgeInsets.symmetric(horizontal: TvLayout.horizontalInset(context)),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: TvLayout.horizontalInset(context),
+                  ),
                   child: ShimmerRail(),
                 )
               : items.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'No items found',
-                        style: TextStyle(color: Colors.white70),
-                      ),
-                    )
-                  : ListView.separated(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: TvLayout.horizontalInset(context),
-                        vertical: 8,
-                      ),
-                      scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
-                      itemCount: items.length,
-                      separatorBuilder: (context, index) => SizedBox(width: TvLayout.sectionGap(context)),
-                      itemBuilder: (context, index) {
-                        return MediaCard(
-                          item: items[index],
-                          onTap: () => onItemTap(items[index]),
-                        );
-                      },
+              ? const Center(
+                  child: Text(
+                    'No items found',
+                    style: TextStyle(color: Colors.white70),
+                  ),
+                )
+              : FocusTraversalGroup(
+                  child: ListView.separated(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: TvLayout.horizontalInset(context),
+                      vertical: 8,
                     ),
+                    scrollDirection: Axis.horizontal,
+                    clipBehavior: Clip.none,
+                    itemCount: items.length,
+                    separatorBuilder: (context, index) =>
+                        SizedBox(width: TvLayout.sectionGap(context)),
+                    itemBuilder: (context, index) {
+                      return MediaCard(
+                        item: items[index],
+                        onTap: () => onItemTap(items[index]),
+                      );
+                    },
+                  ),
+                ),
         ),
       ],
     );

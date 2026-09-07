@@ -41,9 +41,8 @@ class _AppNavigationState extends State<AppNavigation> {
         children: [
           // Content screen occupying 100% width and height
           Positioned.fill(
-            child: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
+            child: FocusTraversalGroup(
+              child: IndexedStack(index: _selectedIndex, children: _screens),
             ),
           ),
 
@@ -83,10 +82,15 @@ class _AppNavigationState extends State<AppNavigation> {
                         decoration: BoxDecoration(
                           color: const Color(0xFF141417),
                           shape: BoxShape.circle,
-                          border: Border.all(color: const Color(0xFFE50914), width: 2.2),
+                          border: Border.all(
+                            color: const Color(0xFFE50914),
+                            width: 2.2,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: const Color(0xFFE50914).withValues(alpha: 0.45),
+                              color: const Color(
+                                0xFFE50914,
+                              ).withValues(alpha: 0.45),
                               blurRadius: 14,
                             ),
                           ],
@@ -131,68 +135,81 @@ class _AppNavigationState extends State<AppNavigation> {
 
                   // Navigation Tabs (Pill style matching streamflix-cf)
                   Expanded(
-                    child: Row(
-                      children: List.generate(_destinations.length, (index) {
-                        final dest = _destinations[index];
-                        final isSelected = _selectedIndex == index;
+                    child: FocusTraversalGroup(
+                      child: Row(
+                        children: List.generate(_destinations.length, (index) {
+                          final dest = _destinations[index];
+                          final isSelected = _selectedIndex == index;
 
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 14.0),
-                          child: TvFocusWrapper(
-                            onTap: () {
-                              setState(() {
-                                _selectedIndex = index;
-                              });
-                            },
-                            borderRadius: BorderRadius.circular(30),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 9),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? const Color(0xFFE50914)
-                                    : Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(30),
-                                border: Border.all(
+                          return Padding(
+                            padding: const EdgeInsets.only(right: 14.0),
+                            child: TvFocusWrapper(
+                              onTap: () {
+                                setState(() {
+                                  _selectedIndex = index;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(30),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 20,
+                                  vertical: 9,
+                                ),
+                                decoration: BoxDecoration(
                                   color: isSelected
                                       ? const Color(0xFFE50914)
-                                      : const Color(0x2EFFFFFF),
-                                  width: 1.2,
+                                      : Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? const Color(0xFFE50914)
+                                        : const Color(0x2EFFFFFF),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(
+                                              0xFFE50914,
+                                            ).withValues(alpha: 0.45),
+                                            blurRadius: 14,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : [],
                                 ),
-                                boxShadow: isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: const Color(0xFFE50914).withValues(alpha: 0.45),
-                                          blurRadius: 14,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                    : [],
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    dest.icon,
-                                    size: 17,
-                                    color: isSelected ? Colors.white : Colors.white70,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    dest.title,
-                                    style: TextStyle(
-                                      color: isSelected ? Colors.white : Colors.white70,
-                                      fontSize: 14.5,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-                                      letterSpacing: 0.3,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      dest.icon,
+                                      size: 17,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : Colors.white70,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      dest.title,
+                                      style: TextStyle(
+                                        color: isSelected
+                                            ? Colors.white
+                                            : Colors.white70,
+                                        fontSize: 14.5,
+                                        fontWeight: isSelected
+                                            ? FontWeight.bold
+                                            : FontWeight.w600,
+                                        letterSpacing: 0.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
                   ),
                 ],

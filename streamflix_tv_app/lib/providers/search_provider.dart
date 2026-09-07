@@ -15,7 +15,7 @@ class SearchProvider extends ChangeNotifier {
 
   void search(String newQuery) {
     query = newQuery.trim();
-    
+
     if (query.isEmpty) {
       clear();
       return;
@@ -25,11 +25,15 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
 
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
-    
+
     _debounceTimer = Timer(const Duration(milliseconds: 350), () async {
       try {
         final tmdbResults = await _tmdbService.search(query);
-        results = tmdbResults.where((item) => item.posterPath != null && item.posterPath!.isNotEmpty).toList();
+        results = tmdbResults
+            .where(
+              (item) => item.posterPath != null && item.posterPath!.isNotEmpty,
+            )
+            .toList();
       } catch (e) {
         debugPrint('[SearchProvider] Error searching: $e');
         results = [];
@@ -51,7 +55,11 @@ class SearchProvider extends ChangeNotifier {
     notifyListeners();
     try {
       final tmdbResults = await _tmdbService.search(query);
-      results = tmdbResults.where((item) => item.posterPath != null && item.posterPath!.isNotEmpty).toList();
+      results = tmdbResults
+          .where(
+            (item) => item.posterPath != null && item.posterPath!.isNotEmpty,
+          )
+          .toList();
     } catch (e) {
       debugPrint('[SearchProvider] Error searching: $e');
       results = [];

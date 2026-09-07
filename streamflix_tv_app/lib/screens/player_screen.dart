@@ -58,7 +58,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
-      final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       if (args != null) {
         _mediaId = args['mediaId'];
         _mediaType = (args['mediaType'] ?? 'movie').toString().toLowerCase();
@@ -111,7 +112,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
     super.dispose();
   }
 
-  String _buildTargetUrl({String? providerId, String? serverId, int startAt = 0}) {
+  String _buildTargetUrl({
+    String? providerId,
+    String? serverId,
+    int startAt = 0,
+  }) {
     final effectiveProvider = providerId ?? _activeProviderId;
     final effectiveServer = serverId ?? _activeServerId;
 
@@ -165,23 +170,36 @@ class _PlayerScreenState extends State<PlayerScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onWebResourceError: (WebResourceError error) {
-            debugPrint('[WebView Resource Error] ${error.description} for ${error.url}');
+            debugPrint(
+              '[WebView Resource Error] ${error.description} for ${error.url}',
+            );
             if (mounted && _isLoading && (error.isForMainFrame ?? true)) {
-              _showHudBadge('Stream error. Press ▲ to switch server', Icons.warning_amber_rounded);
+              _showHudBadge(
+                'Stream error. Press ▲ to switch server',
+                Icons.warning_amber_rounded,
+              );
             }
           },
           onNavigationRequest: (NavigationRequest request) {
-            final isAllowed = AdBlocker.shouldAllowNavigation(_embedUrl, request.url);
+            final isAllowed = AdBlocker.shouldAllowNavigation(
+              _embedUrl,
+              request.url,
+            );
             if (!isAllowed) {
-              debugPrint('[AdBlock] Blocked navigation attempt to: ${request.url}');
+              debugPrint(
+                '[AdBlock] Blocked navigation attempt to: ${request.url}',
+              );
               return NavigationDecision.prevent;
             }
             return NavigationDecision.navigate;
           },
           onPageFinished: (String url) async {
             try {
-              final css = AdBlocker.adBlockCss.replaceAll('\n', ' ').replaceAll("'", "\\'");
-              final injectCssScript = """
+              final css = AdBlocker.adBlockCss
+                  .replaceAll('\n', ' ')
+                  .replaceAll("'", "\\'");
+              final injectCssScript =
+                  """
                 (function() {
                   const style = document.createElement('style');
                   style.innerHTML = '$css';
@@ -426,7 +444,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
     });
     _startLoadingSafetyTimeout();
 
-    _showHudBadge('Switched to ${server.name} (${_formatDuration(_lastPlaybackSeconds)})', Icons.dns);
+    _showHudBadge(
+      'Switched to ${server.name} (${_formatDuration(_lastPlaybackSeconds)})',
+      Icons.dns,
+    );
 
     if (!kIsWeb) {
       await _controller.loadRequest(
@@ -525,6 +546,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
                       ? buildPlatformEmbedView(
                           embedUrl: _embedUrl,
                           title: _title,
+                          fallbackLabel: _mediaType == 'anime'
+                              ? null
+                              : (_activeProviderId == 'vidnest'
+                                    ? 'Try VidSrc'
+                                    : 'Use Vidnest'),
+                          onFallback: _mediaType == 'anime'
+                              ? null
+                              : () => _onSwitchProvider(
+                                  EmbedService.findProvider(
+                                    _activeProviderId == 'vidnest'
+                                        ? 'vidsrc'
+                                        : 'vidnest',
+                                  ),
+                                ),
                           onLoaded: () {
                             if (mounted) setState(() => _isLoading = false);
                           },
@@ -546,7 +581,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             SizedBox(height: 16),
                             Text(
                               'Connecting to Vidnest Stream...',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ],
                         ),
@@ -558,84 +597,143 @@ class _PlayerScreenState extends State<PlayerScreen> {
               // 3. Top Navigation & Info Bar
               if (!kIsWeb)
                 Positioned(
-                // Keep controls clear of the browser/app chrome and the
-                // embedded player's top-edge gesture area.
-                top: TvLayout.headerTopInset(context) + 24,
-                left: TvLayout.horizontalInset(context),
-                right: TvLayout.horizontalInset(context),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        TvFocusWrapper(
-                          onTap: () => Navigator.pop(context),
-                          child: Container(
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(24),
-                            ),
-                            child: const Icon(Icons.arrow_back, color: Colors.white, size: 26),
-                          ),
-                        ),
-                        if (_title.isNotEmpty) ...[
-                          const SizedBox(width: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Text(
-                              _title,
-                              style: const TextStyle(
+                  // Keep controls clear of the browser/app chrome and the
+                  // embedded player's top-edge gesture area.
+                  top: TvLayout.headerTopInset(context) + 24,
+                  left: TvLayout.horizontalInset(context),
+                  right: TvLayout.horizontalInset(context),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          TvFocusWrapper(
+                            onTap: () => Navigator.pop(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(24),
+                              ),
+                              child: const Icon(
+                                Icons.arrow_back,
                                 color: Colors.white,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                                size: 26,
                               ),
                             ),
                           ),
+                          if (_title.isNotEmpty) ...[
+                            const SizedBox(width: 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 8,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Text(
+                                _title,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
-                      ],
-                    ),
-                    // Server Quick Switch Button
-                    TvFocusWrapper(
-                      onTap: () => setState(() => _showServerModal = true),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE50914).withValues(alpha: 0.85),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: Colors.white24),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFFE50914).withValues(alpha: 0.4),
-                              blurRadius: 10,
-                              spreadRadius: 1,
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(Icons.dns, color: Colors.white, size: 18),
-                            const SizedBox(width: 8),
-                            Text(
-                              'Server: ${VidnestService.findServer(_activeServerId).name} (Up)',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
+                      ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (_mediaType != 'anime')
+                            TvFocusWrapper(
+                              onTap: () => _onSwitchProvider(
+                                EmbedService.findProvider(
+                                  _activeProviderId == 'vidnest'
+                                      ? 'vidsrc'
+                                      : 'vidnest',
+                                ),
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFE50914,
+                                  ).withValues(alpha: 0.85),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Text(
+                                  _activeProviderId == 'vidnest'
+                                      ? 'Try VidSrc'
+                                      : 'Use Vidnest',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
                             ),
-                          ],
-                        ),
+                          if (_mediaType != 'anime') const SizedBox(width: 12),
+                          // Server switching applies only to Vidnest.
+                          if (_activeProviderId == 'vidnest')
+                            TvFocusWrapper(
+                              onTap: () =>
+                                  setState(() => _showServerModal = true),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(
+                                    0xFFE50914,
+                                  ).withValues(alpha: 0.85),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white24),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(
+                                        0xFFE50914,
+                                      ).withValues(alpha: 0.4),
+                                      blurRadius: 10,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.dns,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Server: ${VidnestService.findServer(_activeServerId).name} (Up)',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
               // 4. Center On-Screen Feedback HUD (Auto-Hides)
               if (_hudBadgeText != null)
@@ -644,7 +742,10 @@ class _PlayerScreenState extends State<PlayerScreen> {
                     duration: const Duration(milliseconds: 200),
                     opacity: _hudBadgeText != null ? 1.0 : 0.0,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 28,
+                        vertical: 16,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.85),
                         borderRadius: BorderRadius.circular(32),
@@ -661,7 +762,11 @@ class _PlayerScreenState extends State<PlayerScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           if (_hudBadgeIcon != null) ...[
-                            Icon(_hudBadgeIcon, color: const Color(0xFFE50914), size: 32),
+                            Icon(
+                              _hudBadgeIcon,
+                              color: const Color(0xFFE50914),
+                              size: 32,
+                            ),
                             const SizedBox(width: 14),
                           ],
                           Text(

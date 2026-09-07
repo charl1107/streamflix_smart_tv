@@ -66,10 +66,17 @@ class _SearchScreenState extends State<SearchScreen> {
               decoration: InputDecoration(
                 hintText: 'Search for movies, shows, and anime...',
                 hintStyle: const TextStyle(color: Colors.white54, fontSize: 16),
-                prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFFE50914), size: 24),
+                prefixIcon: const Icon(
+                  Icons.search_rounded,
+                  color: Color(0xFFE50914),
+                  size: 24,
+                ),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear_rounded, color: Colors.white54),
+                        icon: const Icon(
+                          Icons.clear_rounded,
+                          color: Colors.white54,
+                        ),
                         onPressed: () {
                           _searchController.clear();
                           context.read<SearchProvider>().clearSearch();
@@ -78,18 +85,30 @@ class _SearchScreenState extends State<SearchScreen> {
                     : null,
                 filled: true,
                 fillColor: const Color(0xFF141417),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Color(0x2EFFFFFF), width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0x2EFFFFFF),
+                    width: 1,
+                  ),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Color(0x2EFFFFFF), width: 1),
+                  borderSide: const BorderSide(
+                    color: Color(0x2EFFFFFF),
+                    width: 1,
+                  ),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(30),
-                  borderSide: const BorderSide(color: Color(0xFFE50914), width: 2),
+                  borderSide: const BorderSide(
+                    color: Color(0xFFE50914),
+                    width: 2,
+                  ),
                 ),
               ),
             ),
@@ -98,34 +117,37 @@ class _SearchScreenState extends State<SearchScreen> {
             child: searchProvider.isLoading
                 ? const ShimmerGrid()
                 : searchProvider.searchResults.isEmpty
-                    ? Center(
-                        child: Text(
-                          _searchController.text.isEmpty
-                              ? 'Type a title to search'
-                              : 'No movies or TV shows found for "${_searchController.text}"',
-                          style: const TextStyle(color: Colors.white54, fontSize: 18),
-                        ),
-                      )
-                    : GridView.builder(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: TvLayout.horizontalInset(context),
-                          vertical: TvLayout.sectionGap(context),
-                        ),
-                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: TvLayout.gridColumns(context),
-                          childAspectRatio: 2 / 3,
-                          crossAxisSpacing: TvLayout.sectionGap(context),
-                          mainAxisSpacing: TvLayout.sectionGap(context),
-                        ),
-                        itemCount: searchProvider.searchResults.length,
-                        itemBuilder: (context, index) {
-                          final item = searchProvider.searchResults[index];
-                          return MediaCard(
-                            item: item,
-                            onTap: () => _navigateToDetail(item),
-                          );
-                        },
+                ? Center(
+                    child: Text(
+                      _searchController.text.isEmpty
+                          ? 'Type a title to search'
+                          : 'No movies or TV shows found for "${_searchController.text}"',
+                      style: const TextStyle(
+                        color: Colors.white54,
+                        fontSize: 18,
                       ),
+                    ),
+                  )
+                : GridView.builder(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: TvLayout.horizontalInset(context),
+                      vertical: TvLayout.sectionGap(context),
+                    ),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: TvLayout.gridColumns(context),
+                      childAspectRatio: 2 / 3,
+                      crossAxisSpacing: TvLayout.sectionGap(context),
+                      mainAxisSpacing: TvLayout.sectionGap(context),
+                    ),
+                    itemCount: searchProvider.searchResults.length,
+                    itemBuilder: (context, index) {
+                      final item = searchProvider.searchResults[index];
+                      return MediaCard(
+                        item: item,
+                        onTap: () => _navigateToDetail(item),
+                      );
+                    },
+                  ),
           ),
         ],
       ),

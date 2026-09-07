@@ -7,6 +7,7 @@ class MediaItem {
   final double rating;
   final int? year;
   final String mediaType;
+
   /// The identifier family used by the playback provider.  The Anime screen is
   /// a catalogue category, not an identifier family: its TMDB results must use
   /// Vidnest's movie or TV endpoints rather than its dedicated anime route.
@@ -78,14 +79,31 @@ class MediaItem {
       mediaType: mediaType,
       playbackType: playbackType ?? (mediaType == 'anime' ? 'tv' : mediaType),
       genreIds: List<int>.from(json['genre_ids'] ?? []),
-      genreNames: (json['genres'] as List<dynamic>?)?.map((g) => g['name'].toString()).toList() ?? [],
-      runtime: json['runtime'] ?? (json['episode_run_time'] is List && (json['episode_run_time'] as List).isNotEmpty ? json['episode_run_time'][0] : null),
+      genreNames:
+          (json['genres'] as List<dynamic>?)
+              ?.map((g) => g['name'].toString())
+              .toList() ??
+          [],
+      runtime:
+          json['runtime'] ??
+          (json['episode_run_time'] is List &&
+                  (json['episode_run_time'] as List).isNotEmpty
+              ? json['episode_run_time'][0]
+              : null),
       totalEpisodes: json['number_of_episodes'],
       numberOfSeasons: json['number_of_seasons'],
       status: json['status'],
       seasons: json['seasons'] ?? [],
-      cast: (json['credits']?['cast'] as List<dynamic>?)?.map((c) => Map<String, dynamic>.from(c)).toList() ?? [],
-      recommendations: (json['recommendations']?['results'] as List<dynamic>?)?.map((r) => MediaItem.fromTmdbJson(Map<String, dynamic>.from(r))).toList() ?? [],
+      cast:
+          (json['credits']?['cast'] as List<dynamic>?)
+              ?.map((c) => Map<String, dynamic>.from(c))
+              .toList() ??
+          [],
+      recommendations:
+          (json['recommendations']?['results'] as List<dynamic>?)
+              ?.map((r) => MediaItem.fromTmdbJson(Map<String, dynamic>.from(r)))
+              .toList() ??
+          [],
     );
   }
 

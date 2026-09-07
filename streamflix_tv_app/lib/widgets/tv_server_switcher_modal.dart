@@ -88,7 +88,10 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
           decoration: BoxDecoration(
             color: const Color(0xFF141722),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.15),
+              width: 1.5,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.7),
@@ -111,10 +114,16 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color(0xFFE50914).withValues(alpha: 0.2),
+                            color: const Color(
+                              0xFFE50914,
+                            ).withValues(alpha: 0.2),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.cloud_sync, color: Color(0xFFE50914), size: 24),
+                          child: const Icon(
+                            Icons.cloud_sync,
+                            color: Color(0xFFE50914),
+                            size: 24,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         const Flexible(
@@ -164,20 +173,33 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color(0xFFE50914).withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: const Color(0xFFE50914).withValues(alpha: 0.6)),
+                      border: Border.all(
+                        color: const Color(0xFFE50914).withValues(alpha: 0.6),
+                      ),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.verified, color: Color(0xFFE50914), size: 14),
+                        Icon(
+                          Icons.verified,
+                          color: Color(0xFFE50914),
+                          size: 14,
+                        ),
                         SizedBox(width: 5),
                         Text(
                           'Vidnest Official (9 Fast CDN Mirrors)',
-                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -199,7 +221,9 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
                   ),
                   itemBuilder: (context, index) {
                     final server = VidnestService.servers[index];
-                    final isActive = server.id.toLowerCase() == widget.activeServerId.toLowerCase();
+                    final isActive =
+                        server.id.toLowerCase() ==
+                        widget.activeServerId.toLowerCase();
 
                     return _ServerCard(
                       server: server,
@@ -217,8 +241,15 @@ class _TvServerSwitcherModalState extends State<TvServerSwitcherModal> {
                 alignment: Alignment.centerRight,
                 child: TextButton.icon(
                   onPressed: widget.onDismiss,
-                  icon: const Icon(Icons.close, color: Colors.white60, size: 18),
-                  label: const Text('Dismiss (Back)', style: TextStyle(color: Colors.white60)),
+                  icon: const Icon(
+                    Icons.close,
+                    color: Colors.white60,
+                    size: 18,
+                  ),
+                  label: const Text(
+                    'Dismiss (Back)',
+                    style: TextStyle(color: Colors.white60),
+                  ),
                 ),
               ),
             ],
@@ -273,11 +304,15 @@ class _ServerCardState extends State<_ServerCard> {
   Widget build(BuildContext context) {
     final borderColor = _isFocused
         ? const Color(0xFFE50914)
-        : (widget.isActive ? const Color(0xFF10B981) : Colors.white.withValues(alpha: 0.1));
+        : (widget.isActive
+              ? const Color(0xFF10B981)
+              : Colors.white.withValues(alpha: 0.1));
 
     final bgColor = _isFocused
         ? const Color(0xFFE50914).withValues(alpha: 0.25)
-        : (widget.isActive ? const Color(0xFF10B981).withValues(alpha: 0.15) : Colors.white.withValues(alpha: 0.05));
+        : (widget.isActive
+              ? const Color(0xFF10B981).withValues(alpha: 0.15)
+              : Colors.white.withValues(alpha: 0.05));
 
     return InkWell(
       focusNode: widget.focusNode,
@@ -304,7 +339,9 @@ class _ServerCardState extends State<_ServerCard> {
           children: [
             Icon(
               widget.isActive ? Icons.check_circle : Icons.dns_outlined,
-              color: widget.isActive ? const Color(0xFF10B981) : (_isFocused ? const Color(0xFFE50914) : Colors.white70),
+              color: widget.isActive
+                  ? const Color(0xFF10B981)
+                  : (_isFocused ? const Color(0xFFE50914) : Colors.white70),
               size: 24,
             ),
             const SizedBox(width: 10),
@@ -321,21 +358,30 @@ class _ServerCardState extends State<_ServerCard> {
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,
-                            fontWeight: _isFocused || widget.isActive ? FontWeight.bold : FontWeight.w500,
+                            fontWeight: _isFocused || widget.isActive
+                                ? FontWeight.bold
+                                : FontWeight.w500,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           widget.server.badge,
-                          style: const TextStyle(color: Colors.white70, fontSize: 10, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
                     ],

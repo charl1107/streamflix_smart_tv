@@ -40,18 +40,27 @@ class GenreChips extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 180),
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
-                  color: isSelected ? const Color(0xFFE50914) : const Color(0xFF141417),
+                  color: isSelected
+                      ? const Color(0xFFE50914)
+                      : const Color(0xFF141417),
                   borderRadius: BorderRadius.circular(24),
                   border: Border.all(
-                    color: isSelected ? const Color(0xFFE50914) : const Color(0x2EFFFFFF),
+                    color: isSelected
+                        ? const Color(0xFFE50914)
+                        : const Color(0x2EFFFFFF),
                     width: 1,
                   ),
                   boxShadow: isSelected
                       ? [
                           BoxShadow(
-                            color: const Color(0xFFE50914).withValues(alpha: 0.4),
+                            color: const Color(
+                              0xFFE50914,
+                            ).withValues(alpha: 0.4),
                             blurRadius: 10,
                           ),
                         ]
@@ -62,7 +71,9 @@ class GenreChips extends StatelessWidget {
                     isAll ? 'All' : genre!.name,
                     style: TextStyle(
                       color: isSelected ? Colors.white : Colors.white70,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                      fontWeight: isSelected
+                          ? FontWeight.bold
+                          : FontWeight.w500,
                       fontSize: 13.5,
                     ),
                   ),

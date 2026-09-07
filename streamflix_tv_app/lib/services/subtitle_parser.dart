@@ -38,13 +38,12 @@ class SubtitleTrack {
     this.cues = const [],
   });
 
-  factory SubtitleTrack.fromApiJson(Map<String, dynamic> json) =>
-      SubtitleTrack(
-        name: json['name'] ?? 'Unknown',
-        language: json['language'] ?? 'und',
-        url: json['url'] ?? '',
-        isDefault: json['isDefault'] ?? false,
-      );
+  factory SubtitleTrack.fromApiJson(Map<String, dynamic> json) => SubtitleTrack(
+    name: json['name'] ?? 'Unknown',
+    language: json['language'] ?? 'und',
+    url: json['url'] ?? '',
+    isDefault: json['isDefault'] ?? false,
+  );
 
   /// Get the active cue at the given position, or null.
   SubtitleCue? getActiveCue(Duration position) {
@@ -84,9 +83,7 @@ List<SubtitleCue> parseVtt(String content) {
         while (i < lines.length && lines[i].trim().isNotEmpty) {
           final cueLine = lines[i].trim();
           // Skip VTT tags like <c.colorE5E5E5> etc
-          final cleaned = cueLine
-              .replaceAll(RegExp(r'<[^>]+>'), '')
-              .trim();
+          final cleaned = cueLine.replaceAll(RegExp(r'<[^>]+>'), '').trim();
           if (cleaned.isNotEmpty) {
             textLines.add(cleaned);
           }
@@ -94,11 +91,9 @@ List<SubtitleCue> parseVtt(String content) {
         }
 
         if (textLines.isNotEmpty && start != null && end != null) {
-          cues.add(SubtitleCue(
-            start: start,
-            end: end,
-            text: textLines.join('\n'),
-          ));
+          cues.add(
+            SubtitleCue(start: start, end: end, text: textLines.join('\n')),
+          );
         }
       }
     } else {

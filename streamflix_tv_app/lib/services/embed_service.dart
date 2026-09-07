@@ -16,6 +16,8 @@ class EmbedProvider {
 }
 
 class EmbedService {
+  static const String _vidSrcBaseUrl = 'https://vidsrc.sbs';
+
   /// Toggle whether to route directly to Vidnest embed or via backend player
   static bool useDirectVidnest = true;
 
@@ -26,9 +28,39 @@ class EmbedService {
       badge: 'Official',
       description: '9 Fast Server Mirrors with Full HLS Video & Subtitles',
     ),
+    EmbedProvider(
+      id: 'vidsrc',
+      name: 'VidSrc',
+      badge: 'Fallback',
+      description: 'Movie and TV fallback using TMDB IDs',
+    ),
   ];
 
-  static EmbedProvider findProvider(String? id) => providers.first;
+  static EmbedProvider findProvider(String? id) => providers.firstWhere(
+    (provider) => provider.id == id,
+    orElse: () => providers.first,
+  );
+
+  static String _vidSrcMovieUrl(dynamic tmdbId, int startAt) {
+    return Uri.https(
+      _vidSrcBaseUrl.replaceFirst('https://', ''),
+      '/embed/movie/$tmdbId/',
+      {'color': 'e50914', if (startAt > 0) 't': '$startAt'},
+    ).toString();
+  }
+
+  static String _vidSrcTvUrl(
+    dynamic tmdbId,
+    int season,
+    int episode,
+    int startAt,
+  ) {
+    return Uri.https(
+      _vidSrcBaseUrl.replaceFirst('https://', ''),
+      '/embed/tv/$tmdbId/$season/$episode/',
+      {'color': 'e50914', if (startAt > 0) 't': '$startAt'},
+    ).toString();
+  }
 
   static String getMovieUrl(
     dynamic tmdbId, {
@@ -36,6 +68,9 @@ class EmbedService {
     String? server,
     int startAt = 0,
   }) {
+    if (provider == 'vidsrc') {
+      return _vidSrcMovieUrl(tmdbId, startAt);
+    }
     if (useDirectVidnest) {
       return VidnestService.buildMovieUrl(
         tmdbId: tmdbId,
@@ -54,6 +89,9 @@ class EmbedService {
     String? server,
     int startAt = 0,
   }) {
+    if (provider == 'vidsrc') {
+      return _vidSrcTvUrl(tmdbId, season, episode, startAt);
+    }
     if (useDirectVidnest) {
       return VidnestService.buildTvUrl(
         tmdbId: tmdbId,
@@ -63,7 +101,13 @@ class EmbedService {
         startAt: startAt,
       );
     }
-    return ApiConfig.tvEmbed(tmdbId, season, episode, server: server, startAt: startAt);
+    return ApiConfig.tvEmbed(
+      tmdbId,
+      season,
+      episode,
+      server: server,
+      startAt: startAt,
+    );
   }
 
   static String getAnimeUrl(
@@ -82,6 +126,12 @@ class EmbedService {
         startAt: startAt,
       );
     }
-    return ApiConfig.animeEmbed(id, season, episode, server: server, startAt: startAt);
+    return ApiConfig.animeEmbed(
+      id,
+      season,
+      episode,
+      server: server,
+      startAt: startAt,
+    );
   }
 }

@@ -37,15 +37,29 @@ void main() {
         server: 'primesrc',
         startAt: 30,
       );
-      expect(url, 'https://vidnest.fun/anime/154587/1/sub?server=primesrc&startAt=30');
+      expect(
+        url,
+        'https://vidnest.fun/anime/154587/1/sub?server=primesrc&startAt=30',
+      );
     });
 
     test('Provides 9 valid streaming servers', () {
       expect(VidnestService.servers.length, 9);
       final serverIds = VidnestService.servers.map((s) => s.id).toList();
-      expect(serverIds, containsAll([
-        'lamda', 'primesrc', 'gama', 'alfa', 'beta', 'sigma', 'catflix', 'hexa', 'delta'
-      ]));
+      expect(
+        serverIds,
+        containsAll([
+          'lamda',
+          'primesrc',
+          'gama',
+          'alfa',
+          'beta',
+          'sigma',
+          'catflix',
+          'hexa',
+          'delta',
+        ]),
+      );
     });
 
     test('findServer returns correct server or defaults to lamda', () {
@@ -64,31 +78,78 @@ void main() {
       final tv = EmbedService.getTvUrl(1399, 1, 1, server: 'primesrc');
       expect(tv, 'https://vidnest.fun/tv/1399/1/1?server=primesrc');
 
-      final anime = EmbedService.getAnimeUrl(21, 1, 5, server: 'gama', startAt: 30);
-      expect(anime, 'https://vidnest.fun/anime/21/5/sub?server=gama&startAt=30');
+      final anime = EmbedService.getAnimeUrl(
+        21,
+        1,
+        5,
+        server: 'gama',
+        startAt: 30,
+      );
+      expect(
+        anime,
+        'https://vidnest.fun/anime/21/5/sub?server=gama&startAt=30',
+      );
     });
 
-    test('EmbedService routes through backend player proxy when useDirectVidnest is false', () {
-      EmbedService.useDirectVidnest = false;
-      final movie = EmbedService.getMovieUrl(550, server: 'sigma', startAt: 60);
-      expect(movie, contains('/player?type=movie&id=550&server=sigma&startAt=60'));
+    test(
+      'EmbedService builds TMDB-based VidSrc fallback URLs for movie and TV',
+      () {
+        final movie = EmbedService.getMovieUrl(
+          860508,
+          provider: 'vidsrc',
+          startAt: 120,
+        );
+        expect(
+          movie,
+          'https://vidsrc.sbs/embed/movie/860508/?color=e50914&t=120',
+        );
 
-      final tv = EmbedService.getTvUrl(1399, 2, 4, server: 'gama', startAt: 120);
-      expect(tv, contains('/player?type=tv&id=1399&s=2&e=4&server=gama&startAt=120'));
+        final tv = EmbedService.getTvUrl(94997, 1, 1, provider: 'vidsrc');
+        expect(tv, 'https://vidsrc.sbs/embed/tv/94997/1/1/?color=e50914');
+      },
+    );
 
-      final anime = EmbedService.getAnimeUrl(99, 1, 3, server: 'lamda');
-      expect(anime, contains('/player?type=anime&id=99&s=1&e=3&server=lamda'));
+    test(
+      'EmbedService routes through backend player proxy when useDirectVidnest is false',
+      () {
+        EmbedService.useDirectVidnest = false;
+        final movie = EmbedService.getMovieUrl(
+          550,
+          server: 'sigma',
+          startAt: 60,
+        );
+        expect(
+          movie,
+          contains('/player?type=movie&id=550&server=sigma&startAt=60'),
+        );
 
-      // Restore
-      EmbedService.useDirectVidnest = true;
-    });
+        final tv = EmbedService.getTvUrl(
+          1399,
+          2,
+          4,
+          server: 'gama',
+          startAt: 120,
+        );
+        expect(
+          tv,
+          contains('/player?type=tv&id=1399&s=2&e=4&server=gama&startAt=120'),
+        );
 
-    test('EmbedService provides Vidnest as the exclusive official provider', () {
-      expect(EmbedService.providers.length, 1);
-      final provider = EmbedService.providers.first;
-      expect(provider.id, 'vidnest');
-      expect(provider.name, 'Vidnest');
+        final anime = EmbedService.getAnimeUrl(99, 1, 3, server: 'lamda');
+        expect(
+          anime,
+          contains('/player?type=anime&id=99&s=1&e=3&server=lamda'),
+        );
+
+        // Restore
+        EmbedService.useDirectVidnest = true;
+      },
+    );
+
+    test('EmbedService provides Vidnest and VidSrc fallback providers', () {
+      expect(EmbedService.providers.length, 2);
       expect(EmbedService.findProvider('vidnest').name, 'Vidnest');
+      expect(EmbedService.findProvider('vidsrc').name, 'VidSrc');
       expect(EmbedService.findProvider('anything').name, 'Vidnest');
     });
   });
