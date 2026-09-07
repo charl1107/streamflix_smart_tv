@@ -98,6 +98,7 @@ class _DetailScreenState extends State<DetailScreen> {
     String? title,
     int? season,
     int? episode,
+    String? fallbackEmbedUrl,
   }) {
     PlayerRouter.open(
       context,
@@ -107,6 +108,7 @@ class _DetailScreenState extends State<DetailScreen> {
       mediaType: _mediaItem.mediaType,
       season: season,
       episode: episode,
+      fallbackEmbedUrl: fallbackEmbedUrl,
     );
   }
 
@@ -123,16 +125,22 @@ class _DetailScreenState extends State<DetailScreen> {
 
   Future<void> _onEpisodeTap(int episodeNumber) async {
     try {
-      final embedUrl = _mediaItem.playbackType == 'anime'
-          ? await _tmdbService.getAnimeEmbedUrl(
-              _mediaItem.id.toString(),
-              episodeNumber,
-            )
-          : EmbedService.getTvUrl(
-              _mediaItem.id,
-              _selectedSeason,
-              episodeNumber,
-            );
+      String embedUrl;
+      String? fallbackEmbedUrl;
+      if (_mediaItem.playbackType == 'anime') {
+        final urls = await _tmdbService.getAnimeEmbedUrls(
+          _mediaItem.id.toString(),
+          episodeNumber,
+        );
+        embedUrl = urls['primary']!;
+        fallbackEmbedUrl = urls['fallback'];
+      } else {
+        embedUrl = EmbedService.getTvUrl(
+          _mediaItem.id,
+          _selectedSeason,
+          episodeNumber,
+        );
+      }
 
       _openPlayerUrl(
         embedUrl,
@@ -140,6 +148,7 @@ class _DetailScreenState extends State<DetailScreen> {
             '${_mediaItem.title} - ${_mediaItem.playbackType == 'anime' ? 'Episode' : 'S$_selectedSeason Ep'} $episodeNumber',
         season: _selectedSeason,
         episode: episodeNumber,
+        fallbackEmbedUrl: fallbackEmbedUrl,
       );
     } catch (error) {
       if (!mounted) return;

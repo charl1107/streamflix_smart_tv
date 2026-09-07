@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_android/src/android_webkit.g.dart'
+    as android_webview;
 import 'package:streamflix_tv/services/ad_blocker.dart';
 import 'package:streamflix_tv/widgets/tv_focus_wrapper.dart';
 
@@ -23,6 +27,20 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
   String _title = '';
   bool _isLoading = true;
   bool _initialized = false;
+
+  void _disableAndroidPopups(AndroidWebViewController controller) {
+    final webView = android_webview.PigeonInstanceManager.instance
+        .getInstanceWithWeakReference<android_webview.WebView>(
+          controller.webViewIdentifier,
+        );
+    if (webView == null) return;
+    unawaited(
+      Future.wait([
+        webView.settings.setJavaScriptCanOpenWindowsAutomatically(false),
+        webView.settings.setSupportMultipleWindows(false),
+      ]),
+    );
+  }
 
   @override
   void initState() {
@@ -48,7 +66,7 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
       if (args != null) {
         _embedUrl = args['embedUrl'] ?? '';
         _title = args['title'] ?? 'Player';
-        _initWebView();
+        unawaited(_initWebView());
         _initialized = true;
       }
     }
@@ -66,7 +84,18 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
   //  WebView setup
   // ──────────────────────────────────────────────────────────────
 
-  void _initWebView() {
+  Future<void> _attachNativeResourceBlocker(
+    AndroidWebViewController controller,
+  ) async {
+    try {
+      await const MethodChannel('com.streamflix.streamflix_tv/ad_blocker')
+          .invokeMethod<void>('attachResourceBlocker', controller.webViewIdentifier);
+    } catch (error) {
+      debugPrint('[AdBlock] Native resource blocker unavailable: $error');
+    }
+  }
+
+  Future<void> _initWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent(
@@ -77,13 +106,19 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
 
     final platform = _controller.platform;
     if (platform is AndroidWebViewController) {
+      _disableAndroidPopups(platform);
       platform.setMediaPlaybackRequiresUserGesture(false);
       platform.setOnPlatformPermissionRequest((request) => request.grant());
       platform.setMixedContentMode(MixedContentMode.alwaysAllow);
     }
 
-    _controller.setNavigationDelegate(
+    await _controller.setNavigationDelegate(
       NavigationDelegate(
+        onPageStarted: (url) async {
+          try {
+            await _controller.runJavaScript(AdBlocker.adBlockScript);
+          } catch (_) {}
+        },
         onWebResourceError: (error) {
           debugPrint('[WebView Error] ${error.description}');
         },
@@ -116,7 +151,10 @@ class _PlayerWebViewScreenState extends State<PlayerWebViewScreen> {
       ),
     );
 
-    _controller.loadRequest(
+    if (platform is AndroidWebViewController) {
+      await _attachNativeResourceBlocker(platform);
+    }
+    await _controller.loadRequest(
       Uri.parse(_embedUrl),
       headers: {'Referer': 'https://streamflix.tv/'},
     );

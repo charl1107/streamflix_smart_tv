@@ -170,4 +170,24 @@ class TmdbService {
     }
     return url;
   }
+
+  Future<Map<String, String>> getAnimeEmbedUrls(
+    String anikotoId,
+    int episode, {
+    String audio = 'sub',
+  }) async {
+    final data = await _api.get(
+      '/anime/watch',
+      queryParameters: {'id': anikotoId, 'episode': episode, 'audio': audio},
+    );
+    final primaryUrl = data['embedUrl'] as String?;
+    if (primaryUrl == null || primaryUrl.isEmpty) {
+      throw StateError('Anime episode embed is unavailable');
+    }
+    final fallbackUrl = data['fallbackUrl'] as String?;
+    return {
+      'primary': primaryUrl,
+      if (fallbackUrl != null && fallbackUrl.isNotEmpty) 'fallback': fallbackUrl,
+    };
+  }
 }

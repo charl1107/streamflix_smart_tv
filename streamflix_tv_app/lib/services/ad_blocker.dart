@@ -160,6 +160,7 @@ class AdBlocker {
     'adkernel.com',
     'admatic.com',
     'adotmob.com',
+    'borrowhourglass.com',
   ];
 
   /// Common telemetry and analytics domains that should never be loaded in embedded media players
@@ -231,6 +232,13 @@ class AdBlocker {
   static const List<String> allowedDomainKeywords = [
     'vidnest.fun',
     'vidnest',
+    'vidsrc.sbs',
+    // VidSrc's approved downstream player hosts. The outer VidSrc embed
+    // selects one of these in its own iframe for movie and TV playback.
+    'web.nxsha.app',
+    'cinesrc.st',
+    'player.videasy.net',
+    'megaplay.buzz',
     'wyzie.io',
     'vdrk.site',
     'streaming-1.workers.dev',
@@ -312,6 +320,22 @@ class AdBlocker {
   /// Injected JavaScript protecting the WebView environment
   static String get adBlockScript => '''
     (function() {
+      // Install the hiding rules immediately. This runs at navigation start,
+      // before the page's display-ad containers can be painted.
+      const adCss = `${adBlockCss}`;
+      function installAdCss() {
+        if (document.getElementById('streamflix-ad-block-css')) return;
+        const style = document.createElement('style');
+        style.id = 'streamflix-ad-block-css';
+        style.textContent = adCss;
+        (document.head || document.documentElement).appendChild(style);
+      }
+      installAdCss();
+      new MutationObserver(installAdCss).observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+      });
+
       // 1. Permanently neutralize window popup and alert APIs
       const noop = function() { return null; };
       window.open = noop;
@@ -322,6 +346,19 @@ class AdBlocker {
       try {
         Object.defineProperty(window, 'open', { value: noop, writable: false });
       } catch(e) {}
+
+      // Stop common pop-under techniques before they can replace the player.
+      ['assign', 'replace'].forEach(function(method) {
+        try {
+          const original = window.location[method].bind(window.location);
+          window.location[method] = function(url) {
+            const value = String(url || '').toLowerCase();
+            const blocked = ['popads', 'popcash', 'propeller', 'adsterra', 'exoclick', 'monetag', 'clickadu'];
+            if (blocked.some(domain => value.includes(domain))) return;
+            return original(url);
+          };
+        } catch(e) {}
+      });
 
       // 2. Intercept click events targeting external ad tabs or unknown links
       document.addEventListener('click', function(e) {
@@ -364,6 +401,9 @@ class AdBlocker {
 
         const adSelectors = [
           '.adsbygoogle', '.banner-ad', '.popunder',
+          '[data-ad]', '[data-ad-slot]', '[data-ad-client]',
+          '[id^="google_ads_"]', '[id*="ad-overlay"]',
+          '[class*="ad-overlay"]', '[class*="advertisement"]',
           'div[id*="ad-"]', 'div[class*="ad-"]',
           '#player-ad-overlay'
         ];
@@ -403,6 +443,30 @@ class AdBlocker {
     .adsbygoogle, 
     .banner-ad, 
     .popunder,
+    [id*="ad_banner"],
+    [id*="ad-banner"],
+    [id*="adcontainer"],
+    [id*="ad-container"],
+    [id*="ad_container"],
+    [id*="adslot"],
+    [id*="ad-slot"],
+    [id*="advert"],
+    [class*="ad_banner"],
+    [class*="ad-banner"],
+    [class*="adcontainer"],
+    [class*="ad-container"],
+    [class*="ad_container"],
+    [class*="adslot"],
+    [class*="ad-slot"],
+    [class*="advert"],
+    iframe[src*="doubleclick"],
+    iframe[src*="googlesyndication"],
+    iframe[src*="popads"],
+    iframe[src*="popcash"],
+    iframe[src*="propeller"],
+    iframe[src*="adsterra"],
+    iframe[src*="exoclick"],
+    iframe[src*="monetag"],
     #player-ad-overlay,
     #ad-popup-modal,
     div[id*="ad-popup"],

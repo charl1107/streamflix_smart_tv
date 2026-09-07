@@ -9,6 +9,7 @@ class PlayerRouterPlatform {
     required String mediaType,
     int? season,
     int? episode,
+    String? fallbackEmbedUrl,
   }) {
     final args = <String, dynamic>{
       'embedUrl': embedUrl,
@@ -18,6 +19,9 @@ class PlayerRouterPlatform {
     };
     if (season != null) args['season'] = season;
     if (episode != null) args['episode'] = episode;
+    if (fallbackEmbedUrl != null && fallbackEmbedUrl.isNotEmpty) {
+      args['fallbackEmbedUrl'] = fallbackEmbedUrl;
+    }
 
     return Navigator.pushNamed(context, '/player', arguments: args);
   }

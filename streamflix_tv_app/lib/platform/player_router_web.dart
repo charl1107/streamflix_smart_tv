@@ -9,6 +9,7 @@ class PlayerRouterPlatform {
     required String mediaType,
     int? season,
     int? episode,
+    String? fallbackEmbedUrl,
   }) {
     final args = <String, dynamic>{
       'embedUrl': embedUrl,

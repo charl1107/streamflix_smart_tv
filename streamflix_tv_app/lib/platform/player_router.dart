@@ -12,6 +12,7 @@ class PlayerRouter {
     required String mediaType,
     int? season,
     int? episode,
+    String? fallbackEmbedUrl,
   }) {
     return PlayerRouterPlatform.open(
       context,
@@ -21,6 +22,7 @@ class PlayerRouter {
       mediaType: mediaType,
       season: season,
       episode: episode,
+      fallbackEmbedUrl: fallbackEmbedUrl,
     );
   }
 }

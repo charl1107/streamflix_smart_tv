@@ -207,24 +207,28 @@ app.get("/watch", async (c) => {
     const selected = episodeList(payload).map((item) => normalizeEpisode(item, id)).find((item) => item.number === episode);
     if (!selected) return c.json({ error: "Episode not found" }, 404);
 
-    // Vidnest's /anime endpoint uses the AniList ID supplied by Anikoto. It is
-    // distinct from Vidnest's /animepahe endpoint, which requires an
-    // AnimePahe-specific ID that Anikoto does not expose.
+    // MegaPlay is the preferred anime provider. Vidnest remains an explicit
+    // in-player fallback when an AniList ID is available.
     const aniListId = String(first(series?.ani_id, series?.aniId, ""));
     const vidnest = baseUrl(c.env.VIDNEST_EMBED_URL, DEFAULT_VIDNEST_URL);
     const vidnestUrl = /^[1-9]\d*$/.test(aniListId)
       ? `${vidnest}/anime/${aniListId}/${episode}/${audio}?server=lamda`
       : null;
-    const directUrl = audio === "dub" ? selected.embedUrlDub || selected.embedUrlSub : selected.embedUrlSub || selected.embedUrlDub;
     const megaPlay = baseUrl(c.env.MEGAPLAY_EMBED_URL, DEFAULT_MEGAPLAY_URL);
-    const megaPlayUrl = directUrl || (selected.episodeEmbedId ? `${megaPlay}/stream/s-2/${encodeURIComponent(selected.episodeEmbedId)}/${audio}` : null);
-    const embedUrl = vidnestUrl || megaPlayUrl;
-    if (!embedUrl) return c.json({ error: "Episode embed is unavailable" }, 503);
+    const megaPlayUrl = selected.episodeEmbedId
+      ? `${megaPlay}/stream/s-2/${encodeURIComponent(selected.episodeEmbedId)}/${audio}`
+      : null;
+    // Do not silently fall back to Vidnest: the app must start on MegaPlay
+    // and leave the Vidnest switch to the viewer.
+    if (!megaPlayUrl) {
+      return c.json({ error: "MegaPlay embed is unavailable for this episode" }, 503);
+    }
     return c.json({
-      provider: vidnestUrl ? "Vidnest" : "Anikoto",
-      source: vidnestUrl ? "anilist" : "anikoto",
-      embedUrl,
-      fallbackUrl: vidnestUrl ? megaPlayUrl : null,
+      provider: "MegaPlay",
+      source: "megaplay",
+      embedUrl: megaPlayUrl,
+      // The Android player turns this into the Use Vidnest / Use MegaPlay button.
+      fallbackUrl: vidnestUrl,
       episode,
       audio,
     });

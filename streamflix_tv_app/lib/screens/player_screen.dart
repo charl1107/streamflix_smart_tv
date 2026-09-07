@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
+import 'package:webview_flutter_android/src/android_webkit.g.dart'
+    as android_webview;
 import '../services/ad_blocker.dart';
 import '../services/vidnest_service.dart';
 import '../services/embed_service.dart';
@@ -32,6 +34,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   String _activeProviderId = 'vidnest';
   String _activeServerId = 'lamda';
+  String? _animeFallbackUrl;
+  String _animeProvider = 'MegaPlay';
   int _lastPlaybackSeconds = 0;
 
   bool _isLoading = true;
@@ -42,6 +46,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
   IconData? _hudBadgeIcon;
   Timer? _hudTimer;
   Timer? _loadingTimeoutTimer;
+
+  void _disableAndroidPopups(AndroidWebViewController controller) {
+    final webView = android_webview.PigeonInstanceManager.instance
+        .getInstanceWithWeakReference<android_webview.WebView>(
+          controller.webViewIdentifier,
+        );
+    if (webView == null) return;
+    unawaited(
+      Future.wait([
+        webView.settings.setJavaScriptCanOpenWindowsAutomatically(false),
+        webView.settings.setSupportMultipleWindows(false),
+      ]),
+    );
+  }
 
   void _startLoadingSafetyTimeout() {
     _loadingTimeoutTimer?.cancel();
@@ -66,10 +84,14 @@ class _PlayerScreenState extends State<PlayerScreen> {
         _season = args['season'] is int ? args['season'] : 1;
         _episode = args['episode'] is int ? args['episode'] : 1;
         _title = args['title'] ?? 'Streaming Player';
+        _animeFallbackUrl = args['fallbackEmbedUrl'] as String?;
 
         final providedUrl = args['embedUrl'] as String?;
         if (providedUrl != null && providedUrl.isNotEmpty) {
           _embedUrl = providedUrl;
+          if (_mediaType == 'anime' && providedUrl.contains('vidnest.fun')) {
+            _animeProvider = 'Vidnest';
+          }
         } else if (_mediaId != null) {
           _embedUrl = _buildTargetUrl(serverId: _activeServerId, startAt: 0);
         } else {
@@ -77,7 +99,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
         }
 
         if (!kIsWeb) {
-          _initWebView();
+          unawaited(_initWebView());
         } else {
           _isLoading = false;
         }
@@ -90,7 +112,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       } else {
         _embedUrl = 'https://vidnest.fun/movie/324857';
         if (!kIsWeb) {
-          _initWebView();
+          unawaited(_initWebView());
         } else {
           _isLoading = false;
         }
@@ -148,7 +170,29 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
   }
 
-  void _initWebView() {
+  Map<String, String> _embedRequestHeaders() {
+    final host = Uri.tryParse(_embedUrl)?.host.toLowerCase() ?? '';
+    if (host.endsWith('vidsrc.sbs')) {
+      return const {'Referer': 'https://vidsrc.sbs/'};
+    }
+    if (host.endsWith('megaplay.buzz')) {
+      return const {'Referer': 'https://megaplay.buzz/'};
+    }
+    return const {'Referer': 'https://vidnest.fun/'};
+  }
+
+  Future<void> _attachNativeResourceBlocker(
+    AndroidWebViewController controller,
+  ) async {
+    try {
+      await const MethodChannel('com.streamflix.streamflix_tv/ad_blocker')
+          .invokeMethod<void>('attachResourceBlocker', controller.webViewIdentifier);
+    } catch (error) {
+      debugPrint('[AdBlock] Native resource blocker unavailable: $error');
+    }
+  }
+
+  Future<void> _initWebView() async {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent(
@@ -158,17 +202,25 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     final platform = _controller.platform;
     if (platform is AndroidWebViewController) {
+      _disableAndroidPopups(platform);
       platform.setMediaPlaybackRequiresUserGesture(false);
       platform.setOnPlatformPermissionRequest((request) => request.grant());
       platform.setMixedContentMode(MixedContentMode.alwaysAllow);
+      // Android WebView rejects third-party cookies by default. Keep that
+      // default instead of creating a version-specific cookie manager.
       platform.setOnConsoleMessage((message) {
         debugPrint('[Vidnest Console] ${message.message}');
       });
     }
 
-    _controller
-      ..setNavigationDelegate(
-        NavigationDelegate(
+    await _controller.setNavigationDelegate(
+      NavigationDelegate(
+          onPageStarted: (String url) async {
+            // Install popup blocking as early as WebView exposes the document.
+            try {
+              await _controller.runJavaScript(AdBlocker.adBlockScript);
+            } catch (_) {}
+          },
           onWebResourceError: (WebResourceError error) {
             debugPrint(
               '[WebView Resource Error] ${error.description} for ${error.url}',
@@ -218,12 +270,15 @@ class _PlayerScreenState extends State<PlayerScreen> {
               });
             }
           },
-        ),
-      )
-      ..loadRequest(
-        Uri.parse(_embedUrl),
-        headers: const {'Referer': 'https://vidnest.fun/'},
-      );
+      ),
+    );
+    if (platform is AndroidWebViewController) {
+      await _attachNativeResourceBlocker(platform);
+    }
+    await _controller.loadRequest(
+      Uri.parse(_embedUrl),
+      headers: _embedRequestHeaders(),
+    );
   }
 
   void _showHudBadge(String text, IconData icon) {
@@ -414,7 +469,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (!kIsWeb) {
       await _controller.loadRequest(
         Uri.parse(_embedUrl),
-        headers: const {'Referer': 'https://vidnest.fun/'},
+        headers: _embedRequestHeaders(),
       );
     } else {
       if (mounted) setState(() => _isLoading = false);
@@ -452,7 +507,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (!kIsWeb) {
       await _controller.loadRequest(
         Uri.parse(_embedUrl),
-        headers: const {'Referer': 'https://vidnest.fun/'},
+        headers: _embedRequestHeaders(),
       );
     } else {
       if (mounted) setState(() => _isLoading = false);
@@ -460,6 +515,30 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
     if (mounted) {
       _tvInputFocusNode.requestFocus();
+    }
+  }
+
+  Future<void> _switchAnimeProvider() async {
+    final fallbackUrl = _animeFallbackUrl;
+    if (fallbackUrl == null || fallbackUrl.isEmpty) return;
+
+    final currentUrl = _embedUrl;
+    setState(() {
+      _embedUrl = fallbackUrl;
+      _animeFallbackUrl = currentUrl;
+      _animeProvider = _animeProvider == 'MegaPlay' ? 'Vidnest' : 'MegaPlay';
+      _isLoading = true;
+    });
+    _startLoadingSafetyTimeout();
+    _showHudBadge('Switched to $_animeProvider', Icons.swap_horiz);
+
+    if (!kIsWeb) {
+      await _controller.loadRequest(
+        Uri.parse(_embedUrl),
+        headers: _embedRequestHeaders(),
+      );
+    } else if (mounted) {
+      setState(() => _isLoading = false);
     }
   }
 
@@ -682,6 +761,31 @@ class _PlayerScreenState extends State<PlayerScreen> {
                               ),
                             ),
                           if (_mediaType != 'anime') const SizedBox(width: 12),
+                          if (_mediaType == 'anime' && _animeFallbackUrl != null)
+                            TvFocusWrapper(
+                              onTap: _switchAnimeProvider,
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE50914).withValues(alpha: 0.85),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.white24),
+                                ),
+                                child: Text(
+                                  'Use ${_animeProvider == 'MegaPlay' ? 'Vidnest' : 'MegaPlay'}',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          if (_mediaType == 'anime' && _animeFallbackUrl != null)
+                            const SizedBox(width: 12),
                           // Server switching applies only to Vidnest.
                           if (_activeProviderId == 'vidnest')
                             TvFocusWrapper(
