@@ -8,6 +8,12 @@ import 'package:streamflix_tv/providers/player_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  const platform = MethodChannel('com.streamflix.streamflix_tv/launch');
+  platform.setMethodCallHandler((call) async {
+    if (call.method == 'resetToHome') {
+      appNavigatorKey.currentState?.popUntil((route) => route.isFirst);
+    }
+  });
   // Force landscape for TV
   SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
