@@ -319,26 +319,36 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       final result = await _controller.runJavaScriptReturningResult('''
         (function() {
-          // 1. First attempt to click the exact Vidnest Play/Pause button
-          const playBtn = document.querySelector('button[class*="PlayButton-module"], button[aria-label="Play"], button[aria-label="Pause"], button[data-media-tooltip="play"]');
-          if (playBtn) {
-            playBtn.click();
-            const v = document.querySelector('video');
-            if (v) return v.paused ? 'paused' : 'playing';
-            const label = playBtn.getAttribute('aria-label') || '';
-            return label.toLowerCase().includes('pause') ? 'playing' : 'paused';
-          }
+          // Neutralize any pop-up/overlay the embed spawns on pause so the
+          // toggle can never be hijacked into opening an ad tab, and strip the
+          // transparent click-catchers ad scripts lay over the Play button.
+          try { window.open = function() { return null; }; } catch (e) {}
+          document.querySelectorAll(
+            '[class*="ad-overlay"],[id*="ad-overlay"],[class*="ad-popup"],[id*="ad-popup"],.popunder,#player-ad-overlay'
+          ).forEach(function(el) { if (!el.querySelector('video')) el.remove(); });
 
-          // 2. Direct HTML5 video fallback
-          const v = document.querySelector('video');
-          if (!v) return 'novideo';
-          if (v.paused) {
-            v.play();
-            return 'playing';
-          } else {
+          // Drive the real <video> element directly. Unlike clicking the
+          // embed's Play button (which the ad layer intercepts and turns into a
+          // pop-up, leaving the video stuck paused), this always resumes.
+          var v = document.querySelector('video');
+          if (v) {
+            if (v.paused) {
+              var p = v.play();
+              if (p && p.catch) p.catch(function() {});
+              return 'playing';
+            }
             v.pause();
             return 'paused';
           }
+
+          // Fallback only when no media element is exposed yet.
+          var playBtn = document.querySelector('button[class*="PlayButton-module"], button[aria-label="Play"], button[aria-label="Pause"], button[data-media-tooltip="play"]');
+          if (playBtn) {
+            playBtn.click();
+            var label = (playBtn.getAttribute('aria-label') || '').toLowerCase();
+            return label.includes('pause') ? 'playing' : 'paused';
+          }
+          return 'novideo';
         })();
       ''');
       final status = result.toString().replaceAll('"', '').trim();

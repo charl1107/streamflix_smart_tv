@@ -125,14 +125,54 @@ class MainActivity : FlutterActivity() {
         }
 
         private companion object {
+            // Network-level blocklist. This is the strongest ad/tracker layer:
+            // matched requests never leave the device, so pop-under brokers and
+            // telemetry beacons cannot load even if the page injects them later.
             val blockedHosts = setOf(
+                // Ad exchanges & display networks
                 "doubleclick.net", "googlesyndication.com", "googleadservices.com",
-                "googletagmanager.com", "google-analytics.com", "popads.net",
-                "popcash.net", "propellerads.com", "adsterra.com", "exoclick.com",
-                "juicyads.com", "monetag.com", "clickadu.com", "onclickads.com",
-                "trafficjunky.com", "adnxs.com", "adsrvr.org", "rubiconproject.com",
-                "pubmatic.com", "openx.net", "casalemedia.com", "outbrain.com",
-                "taboola.com", "mgid.com", "revcontent.com", "scorecardresearch.com",
+                "pagead2.googlesyndication.com", "adservice.google.com",
+                "googletagservices.com", "2mdn.net", "adnxs.com", "adsrvr.org",
+                "rubiconproject.com", "pubmatic.com", "openx.net", "casalemedia.com",
+                "sharethrough.com", "amazon-adsystem.com", "moatads.com",
+                "serving-sys.com", "exponential.com", "undertone.com", "yieldmo.com",
+                "indexexchange.com", "triplelift.com", "smartadserver.com",
+                "adblade.com", "bidswitch.net", "contextweb.com", "sovrn.com",
+                "spotxchange.com", "spotx.tv", "teads.tv", "vibrantmedia.com",
+                "adikteev.com", "adkernel.com", "adotmob.com", "adform.net",
+                "yieldmanager.com", "yieldpartners.com", "yieldkit.com",
+                "springserve.com", "stickyadstv.com", "smartyads.com",
+                "servedby-buysellads.com", "kiosked.com",
+                // Pop-under / pop-up / redirect brokers
+                "popads.net", "popcash.net", "propellerads.com", "propellerclick.com",
+                "adsterra.com", "exoclick.com", "juicyads.com", "juicyscores.com",
+                "monetag.com", "clickadu.com", "onclickads.com", "onclickads.net",
+                "onclickmega.com", "onclicktop.com", "onclickuds.com", "onclicads.com",
+                "hilltopads.com", "hilltopads.net", "bidvertiser.com", "adcash.com",
+                "adbooth.com", "admaven.co", "adtng.com", "adf.ly", "ouo.io",
+                "bc.vc", "sh.st", "cpx24.com", "cpm.biz", "dolohen.com",
+                "roller-ads.com", "richpush.com", "clickaine.com", "admatic.com",
+                "trafficstars.com", "trafficjunky.com", "terraclicks.com",
+                "adcolony.com", "vungle.com", "applovin.com", "chartboost.com",
+                "startapp.com", "tapjoy.com", "mobvista.com", "webeyemob.com",
+                "puserving.com", "rtmark.net", "revdepo.com", "gothamads.com",
+                "betweendigital.com", "aueou.com", "borrowhourglass.com",
+                "obiitpudent.shop", "peelcleanstatic.com", "whiteclick.info",
+                "xusspb.com", "darrfrede.com", "goldenmous.com",
+                // Native-ad / content-recommendation widgets
+                "outbrain.com", "taboola.com", "mgid.com", "revcontent.com",
+                "zergnet.com", "speakol.com", "spoutable.com",
+                // Analytics / telemetry / trackers
+                "google-analytics.com", "googletagmanager.com", "analytics.google.com",
+                "stats.g.doubleclick.net", "scorecardresearch.com", "quantserve.com",
+                "segment.io", "segment.com", "mixpanel.com", "amplitude.com",
+                "hotjar.com", "intercom.io", "sentry.io", "newrelic.com",
+                "datadoghq.com", "crazyegg.com", "mouseflow.com", "fullstory.com",
+                "clarity.ms", "pingdom.net", "matomo.org", "pendo.io",
+                "optimizely.com", "appmetrica.com", "branch.io", "posthog.com",
+                "onesignal.com", "swrve.com", "connect.facebook.net",
+                // Crypto miners
+                "coinhive.com", "coin-hive.com", "crypto-loot.com",
             )
         }
     }
