@@ -73,6 +73,12 @@ class _PlayerScreenState extends State<PlayerScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    HardwareKeyboard.instance.addHandler(_onHardwareKeyEvent);
+  }
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_initialized) {
@@ -128,6 +134,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
 
   @override
   void dispose() {
+    HardwareKeyboard.instance.removeHandler(_onHardwareKeyEvent);
     _loadingTimeoutTimer?.cancel();
     _hudTimer?.cancel();
     _tvInputFocusNode.dispose();
@@ -302,7 +309,20 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       final jsResult = await _controller.runJavaScriptReturningResult('''
         (function() {
-          const v = document.querySelector('video');
+          function findVideo() {
+            var v = document.querySelector('video');
+            if (v) return v;
+            var iframes = document.querySelectorAll('iframe');
+            for (var i = 0; i < iframes.length; i++) {
+              try {
+                var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                var iv = doc.querySelector('video');
+                if (iv) return iv;
+              } catch(e) {}
+            }
+            return null;
+          }
+          var v = findVideo();
           return v ? Math.floor(v.currentTime) : 0;
         })();
       ''');
@@ -319,18 +339,26 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       final result = await _controller.runJavaScriptReturningResult('''
         (function() {
-          // Neutralize any pop-up/overlay the embed spawns on pause so the
-          // toggle can never be hijacked into opening an ad tab, and strip the
-          // transparent click-catchers ad scripts lay over the Play button.
           try { window.open = function() { return null; }; } catch (e) {}
           document.querySelectorAll(
             '[class*="ad-overlay"],[id*="ad-overlay"],[class*="ad-popup"],[id*="ad-popup"],.popunder,#player-ad-overlay'
           ).forEach(function(el) { if (!el.querySelector('video')) el.remove(); });
 
-          // Drive the real <video> element directly. Unlike clicking the
-          // embed's Play button (which the ad layer intercepts and turns into a
-          // pop-up, leaving the video stuck paused), this always resumes.
-          var v = document.querySelector('video');
+          function findVideo() {
+            var v = document.querySelector('video');
+            if (v) return v;
+            var iframes = document.querySelectorAll('iframe');
+            for (var i = 0; i < iframes.length; i++) {
+              try {
+                var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                var iv = doc.querySelector('video');
+                if (iv) return iv;
+              } catch(e) {}
+            }
+            return null;
+          }
+
+          var v = findVideo();
           if (v) {
             if (v.paused) {
               var p = v.play();
@@ -341,7 +369,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
             return 'paused';
           }
 
-          // Fallback only when no media element is exposed yet.
           var playBtn = document.querySelector('button[class*="PlayButton-module"], button[aria-label="Play"], button[aria-label="Pause"], button[data-media-tooltip="play"]');
           if (playBtn) {
             playBtn.click();
@@ -367,36 +394,51 @@ class _PlayerScreenState extends State<PlayerScreen> {
     try {
       final result = await _controller.runJavaScriptReturningResult('''
         (function() {
-          if ($seconds > 0) {
-            // Trigger Vidnest Forward +10s button
-            const fwdBtn = document.querySelector('button[class*="SeekForwardButton-module"], button[aria-label*="forward"]');
-            if (fwdBtn) {
-              fwdBtn.click();
-            } else {
-              const v = document.querySelector('video');
-              if (v) v.currentTime = Math.min(v.duration || 99999, v.currentTime + ($seconds));
+          function findVideo() {
+            var v = document.querySelector('video');
+            if (v) return v;
+            var iframes = document.querySelectorAll('iframe');
+            for (var i = 0; i < iframes.length; i++) {
+              try {
+                var doc = iframes[i].contentDocument || iframes[i].contentWindow.document;
+                var iv = doc.querySelector('video');
+                if (iv) return iv;
+              } catch(e) {}
             }
-          } else {
-            // Trigger Vidnest Backward -10s button
-            const backBtn = document.querySelector('button[class*="SeekBackwardButton-module"], button[aria-label*="backward"]');
-            if (backBtn) {
-              backBtn.click();
-            } else {
-              const v = document.querySelector('video');
-              if (v) v.currentTime = Math.max(0, v.currentTime + ($seconds));
-            }
+            return null;
           }
 
-          const v = document.querySelector('video');
-          return v ? Math.floor(v.currentTime) : 0;
+          var v = findVideo();
+          if (v) {
+            var targetTime = v.currentTime + ($seconds);
+            if ($seconds > 0) {
+              v.currentTime = Math.min(v.duration || 999999, targetTime);
+            } else {
+              v.currentTime = Math.max(0, targetTime);
+            }
+            return Math.floor(v.currentTime);
+          }
+
+          // Fallback: click forward/backward buttons and dispatch keyboard arrows
+          if ($seconds > 0) {
+            var fwdBtn = document.querySelector('button[class*="SeekForwardButton-module"], button[aria-label*="forward"]');
+            if (fwdBtn) fwdBtn.click();
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', code: 'ArrowRight', keyCode: 39, which: 39, bubbles: true }));
+          } else {
+            var backBtn = document.querySelector('button[class*="SeekBackwardButton-module"], button[aria-label*="backward"]');
+            if (backBtn) backBtn.click();
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', code: 'ArrowLeft', keyCode: 37, which: 37, bubbles: true }));
+          }
+
+          return 0;
         })();
       ''');
       final curSec = int.tryParse(result.toString()) ?? 0;
-      final timeStr = _formatDuration(curSec);
+      final timeStr = curSec > 0 ? '  (${_formatDuration(curSec)})' : '';
       if (seconds > 0) {
-        _showHudBadge('+$seconds s  ($timeStr)', Icons.fast_forward);
+        _showHudBadge('+$seconds s$timeStr', Icons.fast_forward);
       } else {
-        _showHudBadge('$seconds s  ($timeStr)', Icons.fast_rewind);
+        _showHudBadge('$seconds s$timeStr', Icons.fast_rewind);
       }
     } catch (e) {
       debugPrint('Seek error: $e');
@@ -552,8 +594,71 @@ class _PlayerScreenState extends State<PlayerScreen> {
     }
   }
 
+  bool _onHardwareKeyEvent(KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
+      return false;
+    }
+
+    final key = event.logicalKey;
+
+    if (_showServerModal) {
+      if (key == LogicalKeyboardKey.escape ||
+          key == LogicalKeyboardKey.backspace ||
+          key == LogicalKeyboardKey.goBack) {
+        setState(() => _showServerModal = false);
+        _tvInputFocusNode.requestFocus();
+        return true;
+      }
+      return false; // Allow modal's own FocusScope to receive navigation keys
+    }
+
+    // Dismiss or Back
+    if (key == LogicalKeyboardKey.escape ||
+        key == LogicalKeyboardKey.backspace ||
+        key == LogicalKeyboardKey.goBack) {
+      if (mounted) Navigator.pop(context);
+      return true;
+    }
+
+    // Toggle Server Switcher
+    if (key == LogicalKeyboardKey.arrowUp ||
+        key == LogicalKeyboardKey.contextMenu) {
+      setState(() => _showServerModal = true);
+      return true;
+    }
+
+    // Play / Pause
+    if (key == LogicalKeyboardKey.select ||
+        key == LogicalKeyboardKey.enter ||
+        key == LogicalKeyboardKey.space ||
+        key == LogicalKeyboardKey.gameButtonA ||
+        key == LogicalKeyboardKey.numpadEnter ||
+        key == LogicalKeyboardKey.mediaPlayPause ||
+        key == LogicalKeyboardKey.mediaPlay ||
+        key == LogicalKeyboardKey.mediaPause) {
+      _togglePlayPause();
+      return true;
+    }
+
+    // Seek Left (-10s)
+    if (key == LogicalKeyboardKey.arrowLeft ||
+        key == LogicalKeyboardKey.mediaRewind) {
+      _seekRelative(-10);
+      return true;
+    }
+
+    // Seek Right (+10s)
+    if (key == LogicalKeyboardKey.arrowRight ||
+        key == LogicalKeyboardKey.mediaFastForward) {
+      _seekRelative(10);
+      return true;
+    }
+
+    return false;
+  }
+
   KeyEventResult _handleTvKeyEvent(FocusNode node, KeyEvent event) {
-    if (event is! KeyDownEvent) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) {
       return KeyEventResult.ignored;
     }
 
@@ -586,6 +691,8 @@ class _PlayerScreenState extends State<PlayerScreen> {
     if (key == LogicalKeyboardKey.select ||
         key == LogicalKeyboardKey.enter ||
         key == LogicalKeyboardKey.space ||
+        key == LogicalKeyboardKey.gameButtonA ||
+        key == LogicalKeyboardKey.numpadEnter ||
         key == LogicalKeyboardKey.mediaPlayPause ||
         key == LogicalKeyboardKey.mediaPlay ||
         key == LogicalKeyboardKey.mediaPause) {
@@ -622,11 +729,7 @@ class _PlayerScreenState extends State<PlayerScreen> {
       },
       child: Scaffold(
         backgroundColor: Colors.black,
-        body: Focus(
-          focusNode: _tvInputFocusNode,
-          autofocus: true,
-          onKeyEvent: _handleTvKeyEvent,
-          child: Stack(
+        body: Stack(
             children: [
               // 1. Embedded Video Player (Native Android WebView or Web IFrame)
               if (_embedUrl.isNotEmpty)
@@ -653,7 +756,25 @@ class _PlayerScreenState extends State<PlayerScreen> {
                             if (mounted) setState(() => _isLoading = false);
                           },
                         )
-                      : WebViewWidget(controller: _controller),
+                      : Focus(
+                          canRequestFocus: false,
+                          descendantsAreFocusable: false,
+                          skipTraversal: true,
+                          child: WebViewWidget(controller: _controller),
+                        ),
+                ),
+
+              // 1b. Transparent D-Pad input overlay — intercepts key events
+              // before the native Android WebView platform view can consume
+              // them, so arrow-key seek and play/pause work on TV remotes.
+              if (!kIsWeb)
+                Positioned.fill(
+                  child: Focus(
+                    focusNode: _tvInputFocusNode,
+                    autofocus: true,
+                    onKeyEvent: _handleTvKeyEvent,
+                    child: const ColoredBox(color: Colors.transparent),
+                  ),
                 ),
 
               // 2. Loading Indicator
@@ -912,7 +1033,6 @@ class _PlayerScreenState extends State<PlayerScreen> {
             ],
           ),
         ),
-      ),
-    );
+      );
   }
 }

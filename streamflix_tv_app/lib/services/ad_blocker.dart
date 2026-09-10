@@ -322,7 +322,7 @@ class AdBlocker {
     (function() {
       // Install the hiding rules immediately. This runs at navigation start,
       // before the page's display-ad containers can be painted.
-      const adCss = `${adBlockCss}`;
+      const adCss = `$adBlockCss`;
       function installAdCss() {
         if (document.getElementById('streamflix-ad-block-css')) return;
         const style = document.createElement('style');
