@@ -4,8 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
-import 'package:webview_flutter_android/src/android_webkit.g.dart'
-    as android_webview;
 import '../services/ad_blocker.dart';
 import '../services/vidnest_service.dart';
 import '../services/embed_service.dart';
@@ -48,17 +46,27 @@ class _PlayerScreenState extends State<PlayerScreen> {
   Timer? _loadingTimeoutTimer;
 
   void _disableAndroidPopups(AndroidWebViewController controller) {
-    final webView = android_webview.PigeonInstanceManager.instance
-        .getInstanceWithWeakReference<android_webview.WebView>(
-          controller.webViewIdentifier,
-        );
-    if (webView == null) return;
-    unawaited(
-      Future.wait([
-        webView.settings.setJavaScriptCanOpenWindowsAutomatically(false),
-        webView.settings.setSupportMultipleWindows(false),
-      ]),
-    );
+    // Suppress native JS dialogs for all frames (including cross-origin
+    // subframes).  The Vidnest gate uses window.confirm in a subframe;
+    // setOnJavaScriptConfirmDialog calls setSynchronousReturnValueForOnJsConfirm
+    // internally, which intercepts at the native level for every frame.
+    controller.setOnJavaScriptConfirmDialog((request) async {
+      if (AdBlocker.isGateMessage(request.message)) {
+        debugPrint('[AdBlock] Auto-confirmed gate dialog: ${request.message}');
+        return true;
+      }
+      debugPrint('[AdBlock] Swallowed JS confirm: ${request.message}');
+      return false;
+    });
+
+    controller.setOnJavaScriptAlertDialog((request) async {
+      debugPrint('[AdBlock] Swallowed JS alert: ${request.message}');
+    });
+
+    controller.setOnJavaScriptTextInputDialog((request) async {
+      debugPrint('[AdBlock] Swallowed JS prompt: ${request.message}');
+      return '';
+    });
   }
 
   void _startLoadingSafetyTimeout() {

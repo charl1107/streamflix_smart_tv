@@ -280,6 +280,21 @@ class AdBlocker {
     return false;
   }
 
+  /// Phrases used by provider JS-dialog gates (e.g. Vidnest "not a robot")
+  static const List<String> gatePhrases = [
+    'not a robot',
+    'confirm you are',
+    'access the content',
+    'verify',
+    'continue to',
+  ];
+
+  /// Returns true when [message] looks like a provider gate dialog
+  static bool isGateMessage(String message) {
+    final lower = message.toLowerCase();
+    return gatePhrases.any(lower.contains);
+  }
+
   /// Evaluates whether a top-level navigation should be permitted
   static bool shouldAllowNavigation(String currentUrl, String targetUrl) {
     if (targetUrl.isEmpty) return false;
@@ -424,9 +439,55 @@ class AdBlocker {
 
       cleanAdOverlays();
 
+      // 5. Remove gate overlays (captcha, robot, "not a robot" prompts)
+      function removeGateOverlays() {
+        var gateSelectors = [
+          '[id*="captcha"]', '[class*="captcha"]',
+          '[id*="gate"]', '[class*="gate"]',
+          '[id*="robot"]', '[class*="robot"]',
+          '[id*="verify"]', '[class*="verify"]',
+          '[id*="e-captcha"]', '[class*="e-captcha"]',
+          '[id*="ecaptcha"]', '[class*="ecaptcha"]',
+        ];
+        gateSelectors.forEach(function(sel) {
+          try {
+            document.querySelectorAll(sel).forEach(function(el) {
+              el.remove();
+              console.log('[AdBlock] Removed gate overlay: ' + sel);
+            });
+          } catch(e) {}
+        });
+
+        // Remove any element containing "not a robot" or "confirm you are" text
+        var allEls = document.querySelectorAll('div, section, aside, article, span, p');
+        allEls.forEach(function(el) {
+          var text = (el.textContent || '').toLowerCase();
+          if (text.includes('not a robot') || text.includes('confirm you are') ||
+              text.includes('access the content') || text.includes('e-captcha') ||
+              text.includes('click allow')) {
+            if (el.querySelector('video')) return; // Don't remove video containers
+            el.remove();
+            console.log('[AdBlock] Removed gate element by text match');
+          }
+        });
+
+        // Auto-click "Continue" buttons in gate overlays
+        var btns = document.querySelectorAll('button, a, [role="button"]');
+        btns.forEach(function(btn) {
+          var text = (btn.textContent || '').toLowerCase().trim();
+          if (text === 'continue' || text === 'ok' || text === 'allow' || text === 'verify') {
+            btn.click();
+            console.log('[AdBlock] Auto-clicked gate button: ' + text);
+          }
+        });
+      }
+
+      removeGateOverlays();
+
       // 4. Observe DOM mutations to remove dynamically injected ads
       const observer = new MutationObserver(() => {
         cleanAdOverlays();
+        removeGateOverlays();
       });
 
       if (document.body) {
@@ -470,7 +531,25 @@ class AdBlocker {
     #player-ad-overlay,
     #ad-popup-modal,
     div[id*="ad-popup"],
-    div[class*="ad-container"] {
+    div[class*="ad-container"],
+    [id*="captcha"],
+    [class*="captcha"],
+    [id*="gate"],
+    [class*="gate"],
+    [id*="robot"],
+    [class*="robot"],
+    [id*="verify"],
+    [class*="verify"],
+    [id*="not-a-robot"],
+    [class*="not-a-robot"],
+    [id*="confirm"],
+    [class*="confirm"],
+    [id*="allow"],
+    [class*="allow"],
+    [id*="e-captcha"],
+    [class*="e-captcha"],
+    [id*="ecaptcha"],
+    [class*="ecaptcha"] {
       display: none !important;
       opacity: 0 !important;
       pointer-events: none !important;
